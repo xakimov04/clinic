@@ -1,7 +1,13 @@
+import 'package:clinic/core/network/network_service.dart';
 import 'package:flutter/material.dart';
 import 'app.dart';
+import 'di/injection_container.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  NetworkService.initializeInterceptors();
+  
+  await init();
   runApp(const MyApp());
 }
 
