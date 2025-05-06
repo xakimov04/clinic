@@ -1,18 +1,40 @@
-allprojects {
+buildscript {
     repositories {
         google()
         mavenCentral()
     }
+    dependencies {
+        // AGP va Kotlin pluginlari
+        classpath "com.android.tools.build:gradle:8.2.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20"
+        // Flutter Gradle pluginni shu yerga qo‘shishga hojat yo‘q,
+        // u settings.gradle orqali includeBuild qilingan.
+    }
 }
 
+// Barcha modul va sub‑project uchun repozitoriyalar
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url "https://androidx.dev/storage/compose-compiler/repository/" }
+        // VK ID SDK repo
+        maven { url "https://artifactory-external.vkpartner.ru/artifactory/vkid-sdk-android/" }
+        // Compose dev repo
+        maven { url "https://maven.pkg.jetbrains.space/public/p/compose/dev" }
+        maven { url "https://jitpack.io" }
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+}
+
+// Build chiqariladigan direktoriyani yuqoriga surish
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// `./gradlew clean` uchun task
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

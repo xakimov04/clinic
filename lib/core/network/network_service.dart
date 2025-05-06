@@ -4,7 +4,7 @@ import 'dart:developer';
 class NetworkService {
   static final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'https://api.example.com', // API bazaviy URL
+      baseUrl: 'http://217.114.7.66:8022/', // API bazaviy URL
       connectTimeout: Duration(minutes: 1),
       receiveTimeout: Duration(minutes: 1),
       headers: {

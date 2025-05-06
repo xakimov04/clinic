@@ -19,7 +19,7 @@ class NetworkManager {
         queryParameters: queryParameters,
         useAuthorization: useAuthorization,
       );
-      return response.data;  // Olingan natijani qaytarish
+      return response.data; // Olingan natijani qaytarish
     } catch (e) {
       throw Exception('Error while fetching data: $e');
     }
@@ -39,7 +39,7 @@ class NetworkManager {
         queryParameters: queryParameters,
         useAuthorization: useAuthorization,
       );
-      return response.data;  // Olingan natijani qaytarish
+      return response.data; // Olingan natijani qaytarish
     } catch (e) {
       throw Exception('Error while posting data: $e');
     }
@@ -59,7 +59,7 @@ class NetworkManager {
         queryParameters: queryParameters,
         useAuthorization: useAuthorization,
       );
-      return response.data;  // Olingan natijani qaytarish
+      return response.data; // Olingan natijani qaytarish
     } catch (e) {
       throw Exception('Error while updating data: $e');
     }
@@ -77,7 +77,7 @@ class NetworkManager {
         queryParameters: queryParameters,
         useAuthorization: useAuthorization,
       );
-      return response.data;  // Olingan natijani qaytarish
+      return response.data; // Olingan natijani qaytarish
     } catch (e) {
       throw Exception('Error while deleting data: $e');
     }

@@ -1,21 +1,24 @@
 import 'package:clinic/core/network/network_service.dart';
 import 'package:flutter/material.dart';
+import 'package:vkid_flutter_sdk/library_vkid.dart';
 import 'app.dart';
 import 'di/injection_container.dart';
+import 'routes/app_routes.dart';
 
-void main() async{
+final router = AppRouter.router;
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NetworkService.initializeInterceptors();
-  
+  await VKID.getInstance();
   await init();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
-    return const App();
+    return App(router: router);
   }
 }
