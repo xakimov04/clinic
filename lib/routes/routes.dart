@@ -1,3 +1,9 @@
 export 'package:clinic/routes/route_paths.dart';
 export '../features/splash/presentation/splash_screen.dart';
-export 'package:clinic/features/home/presentation/screens/home_screen.dart';
+export 'package:clinic/features/home/presentation/pages/home_screen.dart';
+export 'package:clinic/features/appointments/presentation/pages/appointments_screen.dart';
+export 'package:clinic/features/auth/presentation/pages/auth_screen.dart';
+export 'package:clinic/features/chat/presentation/pages/chat_screen.dart';
+export 'package:clinic/features/main/presentation/main_screen.dart';
+export 'package:clinic/features/news/presentation/pages/news_screen.dart';
+export 'package:clinic/features/profile/presentation/pages/profile_screen.dart';

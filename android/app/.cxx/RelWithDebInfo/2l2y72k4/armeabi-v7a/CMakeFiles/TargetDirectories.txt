@@ -1,0 +1,2 @@
+/Users/macbookair/Clinic/clinic/android/app/.cxx/RelWithDebInfo/2l2y72k4/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/macbookair/Clinic/clinic/android/app/.cxx/RelWithDebInfo/2l2y72k4/armeabi-v7a/CMakeFiles/rebuild_cache.dir

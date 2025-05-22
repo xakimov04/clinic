@@ -1,0 +1,2 @@
+/Users/macbookair/Clinic/clinic/android/app/.cxx/Debug/2z6v591o/x86/CMakeFiles/edit_cache.dir
+/Users/macbookair/Clinic/clinic/android/app/.cxx/Debug/2z6v591o/x86/CMakeFiles/rebuild_cache.dir

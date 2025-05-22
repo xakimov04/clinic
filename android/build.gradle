@@ -4,11 +4,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // AGP va Kotlin pluginlari
         classpath "com.android.tools.build:gradle:8.2.1"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20"
-        // Flutter Gradle pluginni shu yerga qo‘shishga hojat yo‘q,
-        // u settings.gradle orqali includeBuild qilingan.
     }
 }
 
@@ -27,14 +24,12 @@ allprojects {
     }
 }
 
-// Build chiqariladigan direktoriyani yuqoriga surish
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
     project.evaluationDependsOn(":app")
 }
 
-// `./gradlew clean` uchun task
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

@@ -1,17 +1,14 @@
-import 'package:clinic/core/platform/platform_info.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 
-import 'di_export.dart';
+import 'export/di_export.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // MARK: - CORE REGISTRATIONS
-  sl.registerLazySingleton(() => LocalStorageService());
-  sl.registerLazySingleton(() => RequestHandler());
-  sl.registerLazySingleton(() => NetworkManager(requestHandler: sl()));
+  //NOTE: Core modullarni ro'yxatga olish
+  await registerCoreModule();
 
-  // Core
-  sl.registerLazySingleton(() => PlatformInfo(connectivity: sl()));
-  sl.registerLazySingleton(() => Connectivity());
+  //NOTE: Feature modullarni ro'yxatga olish
+  await registerAuthModule();
+  await registerProfileModule();
+  await registerHomeModule();
 }

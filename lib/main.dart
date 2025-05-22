@@ -1,7 +1,6 @@
 import 'package:clinic/core/network/network_service.dart';
 import 'package:flutter/material.dart';
-import 'package:vkid_flutter_sdk/library_vkid.dart';
-import 'app.dart';
+import 'app/app.dart';
 import 'di/injection_container.dart';
 import 'routes/app_routes.dart';
 
@@ -10,8 +9,8 @@ final router = AppRouter.router;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NetworkService.initializeInterceptors();
-  await VKID.getInstance();
   await init();
+
   runApp(MyApp());
 }
 

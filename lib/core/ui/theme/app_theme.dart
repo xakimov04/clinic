@@ -19,7 +19,12 @@ class AppTheme {
       primaryColor: ColorConstants.primaryColor,
       scaffoldBackgroundColor: ColorConstants.backgroundColor,
       fontFamily: 'Roboto',
-
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: const FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+        },
+      ),
       // AppBar tema
       appBarTheme: const AppBarTheme(
         backgroundColor: ColorConstants.backgroundColor,

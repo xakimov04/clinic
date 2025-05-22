@@ -1,10 +1,16 @@
+import 'package:clinic/core/constants/app_contants.dart';
+import 'package:clinic/core/local/local_storage_service.dart';
+import 'package:clinic/core/local/storage_keys.dart';
+import 'package:clinic/core/network/token_manager.dart';
 import 'package:dio/dio.dart';
 import 'dart:developer';
+
+import 'package:flutter/widgets.dart';
 
 class NetworkService {
   static final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: 'http://217.114.7.66:8022/', // API bazaviy URL
+      baseUrl: AppConstants.apiBaseUrl, // API bazaviy URL
       connectTimeout: Duration(minutes: 1),
       receiveTimeout: Duration(minutes: 1),
       headers: {
@@ -12,15 +18,23 @@ class NetworkService {
       },
     ),
   );
+  static GlobalKey<NavigatorState> navigatorKey = TokenManager.navigatorKey;
 
   // Singleton pattern
   static Dio get dio => _dio;
+  
   static void initializeInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // So'rovdan oldin: Authorization va log
           log('Request [${options.method}] => ${options.uri}');
+          log('Headers => ${options.headers}');
+          if (options.queryParameters.isNotEmpty) {
+            log('Query Parameters => ${options.queryParameters}');
+          }
+          if (options.data != null) {
+            log('Request Data => ${options.data}');
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -28,9 +42,17 @@ class NetworkService {
           log('Response [${response.statusCode}] => ${response.data}');
           return handler.next(response);
         },
-        onError: (DioException e, handler) {
+        onError: (DioException e, handler) async {
           // Xatolikni qayta ishlash: API va tarmoq xatoliklari
           log('Error [${e.response?.statusCode}] => ${e.message}');
+          if (e.response?.statusCode == 401) {
+            // TokenManager orqali xatolikni hal qilish
+            final response = await TokenManager.handle401Error(e, _dio);
+            if (response != null) {
+              return handler.resolve(response);
+            }
+          }
+
           return handler.next(e);
         },
       ),
@@ -46,9 +68,12 @@ class NetworkService {
     bool useAuthorization = false,
   }) async {
     try {
+      final accesToken =
+          await LocalStorageService().getString(StorageKeys.accesToken);
       final options = Options(
         method: method,
-        headers: useAuthorization ? {'Authorization': 'Bearer YOUR_TOKEN'} : {},
+        headers:
+            useAuthorization ? {} : {'Authorization': 'Bearer $accesToken'},
       );
       Response response = await _dio.request(
         url,
