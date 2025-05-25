@@ -50,6 +50,7 @@ dependencies:
   shimmer: ^3.0.0
   skeletonizer: ^1.4.3
   animations: ^2.0.11
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

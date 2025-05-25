@@ -19,7 +19,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   Future<ProfileModel> getUserProfile() async {
     try {
       final data = await networkManager.fetchData(
-        url: 'user/',
+        url: 'auth/profile/',
       );
       return ProfileModel.fromJson(data);
     } catch (e) {

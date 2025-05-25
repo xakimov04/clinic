@@ -1,5 +1,6 @@
 import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/core/di/export/di_export.dart';
+import 'package:clinic/core/role_management/role_manager.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_event.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_state.dart';
@@ -44,6 +45,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             StorageKeys.refreshToken, data.refreshToken);
         localStorageService.setString(
             StorageKeys.userId, data.user.id.toString());
+        localStorageService.setString(
+            StorageKeys.userRole, UserRole.client.name);
         emit(AuthAuthenticated(data));
       },
     );
@@ -103,6 +106,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             StorageKeys.refreshToken, data.refreshToken);
         localStorageService.setString(
             StorageKeys.userId, data.userId.toString());
+        localStorageService.setString(
+            StorageKeys.userRole, UserRole.doctor.name);
+
         emit(DoctorLoginAuthenticated(data));
       },
     );
