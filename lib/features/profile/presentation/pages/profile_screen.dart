@@ -1,4 +1,5 @@
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -110,16 +111,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: Center(
-                        child: user.avatar != null
-                            ? CircleAvatar(
-                                radius: 48,
-                                backgroundImage: NetworkImage(user.avatar!),
-                              )
-                            : Icon(
-                                Icons.person_outline_rounded,
-                                size: 40,
-                                color: Colors.grey[400],
-                              ),
+                        child: CustomCachedImage(
+                          imageUrl: user.avatar,
+                          width: 50,
+                          height: 50,
+                          type: CustomImageType.circle,
+                          backgroundColor: const Color(0xFFF5F7FA),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 20),
