@@ -1,8 +1,8 @@
 import 'package:clinic/core/network/network_service.dart';
 import 'package:flutter/material.dart';
 import 'app/app.dart';
-import 'di/injection_container.dart';
-import 'routes/app_routes.dart';
+import 'core/di/injection_container.dart';
+import 'core/routes/app_routes.dart';
 
 final router = AppRouter.router;
 

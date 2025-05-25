@@ -1,7 +1,7 @@
 import 'package:clinic/core/constants/app_contants.dart';
 import 'package:clinic/core/local/local_storage_service.dart';
 import 'package:clinic/core/local/storage_keys.dart';
-import 'package:clinic/routes/app_routes.dart';
+import 'package:clinic/core/routes/app_routes.dart';
 import 'package:dio/dio.dart';
 import 'dart:developer';
 import 'package:flutter/material.dart';

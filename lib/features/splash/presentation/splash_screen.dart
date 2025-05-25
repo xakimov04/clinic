@@ -1,8 +1,8 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/core/local/storage_keys.dart';
-import 'package:clinic/di/export/di_export.dart';
-import 'package:clinic/di/injection_container.dart';
+import 'package:clinic/core/di/export/di_export.dart';
+import 'package:clinic/core/di/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
