@@ -3,7 +3,7 @@ import 'package:clinic/core/local/local_storage_service.dart';
 import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/core/network/network_manager.dart';
 import 'package:clinic/core/di/injection_container.dart';
-import 'package:clinic/features/client/profile/data/model/profile_model.dart';
+import 'package:clinic/features/profile/data/model/profile_model.dart';
 
 abstract class ProfileRemoteDataSource {
   Future<ProfileModel> getUserProfile();

@@ -15,9 +15,9 @@ class DoctorRemoteDataSourceImpl implements DoctorRemoteDataSource {
   Future<Either<Failure, List<DoctorModel>>> getDoctors() async {
     try {
       final response = await networkManager.fetchData(
-        url: 'doctors/',
+        url: 'doctors/available/',
       );
-       final data =
+      final data =
           (response as List).map((e) => DoctorModel.fromJson(e)).toList();
       return Right(data);
     } catch (e) {

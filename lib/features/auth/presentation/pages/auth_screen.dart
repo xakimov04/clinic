@@ -1,5 +1,9 @@
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/di/injection_container.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/local/local_storage_service.dart';
+import 'package:clinic/core/local/storage_keys.dart';
+import 'package:clinic/core/role_management/role_manager.dart';
 import 'package:clinic/core/ui/widgets/buttons/custom_button.dart';
 import 'package:clinic/core/ui/widgets/inputs/custom_text_feild.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
@@ -137,6 +141,9 @@ class _AuthScreenState extends State<AuthScreen>
             context: context,
             message: "SMS код подтвержден!",
           );
+          sl<LocalStorageService>()
+              .setString(StorageKeys.userRole, UserRole.client.name);
+
           context.go('/home');
         } else if (state is OtpSent) {
           setState(() {

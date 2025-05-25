@@ -1,10 +1,10 @@
 import 'package:clinic/core/constants/color_constants.dart';
-import 'package:clinic/features/client/profile/domain/entities/profile_entities.dart';
+import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
-import 'package:clinic/features/client/profile/presentation/bloc/profile_bloc.dart';
+import 'package:clinic/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatefulWidget {

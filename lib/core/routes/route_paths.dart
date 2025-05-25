@@ -6,4 +6,9 @@ class RoutePaths {
   static const String newsScreen = '/news';
   static const String appointmentsScreen = '/appointments';
   static const String chatScreen = '/chat';
+
+  // Doctor routes
+  static const String doctorLogin = '/doctor-login';
+  static const String doctorHome = '/doctor-home';
+  static const String doctorProfile = '/doctor-profile';
 }

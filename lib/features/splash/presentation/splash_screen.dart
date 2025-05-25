@@ -3,6 +3,8 @@ import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/core/di/export/di_export.dart';
 import 'package:clinic/core/di/injection_container.dart';
+import 'package:clinic/core/role_management/role_manager.dart';
+import 'package:clinic/core/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -56,22 +58,29 @@ class _SplashScreenState extends State<SplashScreen>
   void _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 300));
     _controller.forward();
-    
+
     // Navigate after animation
     await Future.delayed(const Duration(seconds: 2));
     _navigateToNextPage();
   }
 
   Future<void> _navigateToNextPage() async {
-    final isLoggedIn = await _localStorage.getBool(StorageKeys.isLoggedIn) ?? false;
-    
+    final isLoggedIn =
+        await _localStorage.getBool(StorageKeys.isLoggedIn) ?? false;
+    final userRole = await _localStorage.getString(StorageKeys.userRole) ?? '';
     if (!mounted) return;
-    
+
     // Smooth fade out
     await _controller.reverse();
-    
+
     if (!mounted) return;
-    context.go(isLoggedIn ? '/home' : '/auth');
+    context.go(isLoggedIn
+        ? userRole == UserRole.client.name
+            ? RoutePaths.homeScreen
+            : userRole == UserRole.doctor.name
+                ? RoutePaths.doctorHome
+                : RoutePaths.homeScreen
+        : RoutePaths.authScreen);
   }
 
   @override
@@ -93,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(flex: 2),
-                  
+
                   // Logo animation
                   Transform.scale(
                     scale: _scaleAnimation.value,
@@ -102,23 +111,23 @@ class _SplashScreenState extends State<SplashScreen>
                       child: _buildLogo(),
                     ),
                   ),
-                  
+
                   32.h,
-                  
+
                   // Title and subtitle animation with staggered effect
                   Opacity(
                     opacity: _fadeAnimation.value,
                     child: _buildContent(),
                   ),
-                  
+
                   const Spacer(flex: 2),
-                  
+
                   // Loading indicator
                   Opacity(
                     opacity: _fadeAnimation.value,
                     child: _buildLoading(),
                   ),
-                  
+
                   60.h,
                 ],
               );

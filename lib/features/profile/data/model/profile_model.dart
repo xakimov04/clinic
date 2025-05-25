@@ -1,4 +1,4 @@
-import 'package:clinic/features/client/profile/domain/entities/profile_entities.dart';
+import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 
 class ProfileModel extends ProfileEntities {
   const ProfileModel({

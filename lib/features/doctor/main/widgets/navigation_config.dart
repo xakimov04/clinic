@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/routes/routes.dart';
 import 'package:clinic/features/client/main/data/model/nav_item.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -17,13 +18,13 @@ class DoctorNavigationConfig {
       label: 'Главная',
       icon: CupertinoIcons.house,
       activeIcon: CupertinoIcons.house_fill,
-      path: '/home',
+      path: RoutePaths.doctorHome,
     ),
     NavItem(
       label: 'Профиль',
       icon: CupertinoIcons.person,
       activeIcon: CupertinoIcons.person_fill,
-      path: '/profile',
+      path: RoutePaths.profileScreen,
     ),
   ];
 

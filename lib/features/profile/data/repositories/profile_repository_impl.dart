@@ -2,10 +2,10 @@ import 'package:clinic/core/error/either.dart';
 import 'package:clinic/core/error/exception.dart';
 import 'package:clinic/core/error/failure.dart';
 import 'package:clinic/core/platform/platform_info.dart';
-import 'package:clinic/features/client/profile/data/datasource/profile_local_data_source.dart';
-import 'package:clinic/features/client/profile/data/datasource/profile_remote_data_source.dart';
-import 'package:clinic/features/client/profile/domain/entities/profile_entities.dart';
-import 'package:clinic/features/client/profile/domain/repositories/profile_repositories.dart';
+import 'package:clinic/features/profile/data/datasource/profile_local_data_source.dart';
+import 'package:clinic/features/profile/data/datasource/profile_remote_data_source.dart';
+import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
+import 'package:clinic/features/profile/domain/repositories/profile_repositories.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDataSource remoteDataSource;

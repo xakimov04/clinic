@@ -1,15 +1,22 @@
 import 'package:clinic/core/routes/routes.dart';
+import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
+import 'package:clinic/features/doctor/main/pages/doctor_main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
-  // Har bir screen state-ni saqlash uchun key
   static final rootNavigatorKey = GlobalKey<NavigatorState>();
-  static final _homeNavigatorKey = GlobalKey<NavigatorState>();
-  static final _newsNavigatorKey = GlobalKey<NavigatorState>();
-  static final _appointmentsNavigatorKey = GlobalKey<NavigatorState>();
-  static final _chatNavigatorKey = GlobalKey<NavigatorState>();
-  static final _profileNavigatorKey = GlobalKey<NavigatorState>();
+
+  // Patient uchun navigator kalitlari
+  static final _patientHomeNavigatorKey = GlobalKey<NavigatorState>();
+  static final _patientNewsNavigatorKey = GlobalKey<NavigatorState>();
+  static final _patientAppointmentsNavigatorKey = GlobalKey<NavigatorState>();
+  static final _patientChatNavigatorKey = GlobalKey<NavigatorState>();
+  static final _patientProfileNavigatorKey = GlobalKey<NavigatorState>();
+
+  // Doctor uchun navigator kalitlari
+  static final _doctorHomeNavigatorKey = GlobalKey<NavigatorState>();
+  static final _doctorProfileNavigatorKey = GlobalKey<NavigatorState>();
 
   static GoRouter get router {
     return GoRouter(
@@ -28,19 +35,19 @@ class AppRouter {
           builder: (context, state) => const AuthScreen(),
         ),
         GoRoute(
-          path: '/doctor-login',
+          path: RoutePaths.doctorLogin,
           builder: (context, state) => const DoctorLoginScreen(),
         ),
-        // Main screens with bottom navigation
+
+        // Patient main screens
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
-            // StatefulShellRoute orqali MainScreen-ni qurish
             return MainScreen(navigationShell: navigationShell);
           },
           branches: [
-            // 1. Home branch
+            // Home branch
             StatefulShellBranch(
-              navigatorKey: _homeNavigatorKey,
+              navigatorKey: _patientHomeNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.homeScreen,
@@ -51,8 +58,9 @@ class AppRouter {
               ],
             ),
 
+            // News branch
             StatefulShellBranch(
-              navigatorKey: _newsNavigatorKey,
+              navigatorKey: _patientNewsNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.newsScreen,
@@ -62,9 +70,10 @@ class AppRouter {
                 ),
               ],
             ),
-            // 2. Appointments branch
+
+            // Appointments branch
             StatefulShellBranch(
-              navigatorKey: _appointmentsNavigatorKey,
+              navigatorKey: _patientAppointmentsNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.appointmentsScreen,
@@ -75,9 +84,9 @@ class AppRouter {
               ],
             ),
 
-            // 3. Chat branch
+            // Chat branch
             StatefulShellBranch(
-              navigatorKey: _chatNavigatorKey,
+              navigatorKey: _patientChatNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.chatScreen,
@@ -88,12 +97,46 @@ class AppRouter {
               ],
             ),
 
-            // 4. Profile branch
+            // Patient Profile branch
             StatefulShellBranch(
-              navigatorKey: _profileNavigatorKey,
+              navigatorKey: _patientProfileNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.profileScreen,
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                    child: ProfileScreen(),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // Doctor main screen
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) {
+            return DoctorMainScreen(navigationShell: navigationShell);
+          },
+          branches: [
+            // Doctor Home branch
+            StatefulShellBranch(
+              navigatorKey: _doctorHomeNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: RoutePaths.doctorHome,
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DoctorHomeScreen(),
+                  ),
+                ),
+              ],
+            ),
+
+            // Doctor Profile branch (umumiy ProfileScreen)
+            StatefulShellBranch(
+              navigatorKey: _doctorProfileNavigatorKey,
+              routes: [
+                GoRoute(
+                  path: RoutePaths.doctorProfile,
                   pageBuilder: (context, state) => const NoTransitionPage(
                     child: ProfileScreen(),
                   ),

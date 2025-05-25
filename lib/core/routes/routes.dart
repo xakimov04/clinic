@@ -7,4 +7,4 @@ export 'package:clinic/features/client/chat/presentation/pages/chat_screen.dart'
 export 'package:clinic/features/client/main/presentation/main_screen.dart';
 export 'package:clinic/features/client/news/presentation/pages/news_screen.dart';
 export 'package:clinic/features/auth/presentation/pages/doctor_login_screen.dart';
-export 'package:clinic/features/client/profile/presentation/pages/profile_screen.dart';
+export 'package:clinic/features/profile/presentation/pages/profile_screen.dart';

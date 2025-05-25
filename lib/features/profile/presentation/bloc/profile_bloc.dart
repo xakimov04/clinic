@@ -1,6 +1,6 @@
-import 'package:clinic/features/client/profile/domain/entities/profile_entities.dart';
-import 'package:clinic/features/client/profile/domain/usecase/get_user_profile.dart';
-import 'package:clinic/features/client/profile/domain/usecase/logout.dart';
+import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
+import 'package:clinic/features/profile/domain/usecase/get_user_profile.dart';
+import 'package:clinic/features/profile/domain/usecase/logout.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/usecase/usecase.dart';

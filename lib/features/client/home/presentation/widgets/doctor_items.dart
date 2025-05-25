@@ -79,9 +79,9 @@ class _DoctorItemsState extends State<DoctorItems>
             width: 40,
             child: Platform.isIOS
                 ? CupertinoActivityIndicator(
-                  animating: true,
-                  color: ColorConstants.primaryColor,
-                )
+                    animating: true,
+                    color: ColorConstants.primaryColor,
+                  )
                 : CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -325,7 +325,6 @@ class _DoctorItemsState extends State<DoctorItems>
             child: Column(
               children: [
                 _buildDoctorCardContent(doctor),
-                _buildDoctorCardFooter(doctor),
               ],
             ),
           ),
@@ -358,8 +357,6 @@ class _DoctorItemsState extends State<DoctorItems>
   }
 
   Widget _buildDoctorAvatar(DoctorEntity doctor) {
-    final initials = '${doctor.firstName[0]}${doctor.lastName[0]}';
-
     return Container(
       width: 70,
       height: 70,
@@ -385,7 +382,7 @@ class _DoctorItemsState extends State<DoctorItems>
         children: [
           Center(
             child: Text(
-              initials,
+              doctor.fullName[0].toUpperCase(),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -419,7 +416,7 @@ class _DoctorItemsState extends State<DoctorItems>
 
   Widget _buildDoctorName(DoctorEntity doctor) {
     return Text(
-      'Др. ${doctor.lastName} ${doctor.firstName}',
+      'Др. ${doctor.fullName}',
       style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
@@ -432,103 +429,13 @@ class _DoctorItemsState extends State<DoctorItems>
 
   Widget _buildDoctorDescription(DoctorEntity doctor) {
     return Text(
-      doctor.description,
+      doctor.specialization,
       style: TextStyle(
         fontSize: 11,
         color: Colors.grey[600],
       ),
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildDoctorCardFooter(DoctorEntity doctor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(16),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildPriceInfo(doctor),
-          _buildBookButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceInfo(DoctorEntity doctor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Стоимость приема',
-          style: TextStyle(
-            fontSize: 10,
-            color: ColorConstants.secondaryTextColor,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          '${doctor.pricePerVisit} ₽',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: ColorConstants.textColor,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBookButton() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          // Действие записи на прием
-        },
-        borderRadius: BorderRadius.circular(10),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: ColorConstants.primaryGradient,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: ColorConstants.primaryColor.withOpacity(0.2),
-                blurRadius: 4,
-                spreadRadius: 0,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.event_available_rounded,
-                  color: Colors.white,
-                  size: 14,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'Записаться',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

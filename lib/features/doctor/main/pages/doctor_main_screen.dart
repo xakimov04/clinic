@@ -1,5 +1,5 @@
 import 'package:clinic/features/client/main/data/model/nav_item.dart';
-import 'package:clinic/features/client/main/widgets/navigation_config.dart';
+import 'package:clinic/features/doctor/main/widgets/navigation_config.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +28,7 @@ class _DoctorMainScreenState extends State<DoctorMainScreen>
   @override
   void initState() {
     super.initState();
-    _destinations = NavigationConfig.getDestinations();
+    _destinations = DoctorNavigationConfig.getDestinations();
 
     // Animatsiya controllerni yaratamiz
     _animationController = AnimationController(
@@ -85,7 +85,7 @@ class _DoctorMainScreenState extends State<DoctorMainScreen>
   Widget _buildAnimatedNavigationBar() {
     return Container(
       decoration: BoxDecoration(
-        color: NavigationConfig.getBackgroundColor(),
+        color: DoctorNavigationConfig.getBackgroundColor(),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: ClipRRect(
@@ -93,7 +93,7 @@ class _DoctorMainScreenState extends State<DoctorMainScreen>
         child: CupertinoTabBar(
           currentIndex: widget.navigationShell.currentIndex,
           activeColor: ColorConstants.primaryColor,
-          inactiveColor: NavigationConfig.getInactiveColor(),
+          inactiveColor: DoctorNavigationConfig.getInactiveColor(),
           backgroundColor: Colors.transparent,
           iconSize: 24.0,
           height: 50.0,
