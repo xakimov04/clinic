@@ -1,4 +1,3 @@
-
 import 'package:clinic/core/di/export/di_export.dart';
 
 Future<void> registerProfileModule() async {
@@ -24,12 +23,14 @@ Future<void> registerProfileModule() async {
   
   // Use Cases
   sl.registerLazySingleton(() => GetUserProfile(sl()));
+  sl.registerLazySingleton(() => UpdateProfile(sl())); // Yangi use case
   sl.registerLazySingleton(() => Logout(sl()));
   
   // BLoC
   sl.registerFactory(
     () => ProfileBloc(
       getUserProfile: sl(),
+      updateProfile: sl(), // Yangi use case qo'shish
       logout: sl(),
     ),
   );

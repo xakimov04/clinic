@@ -7,6 +7,8 @@ import 'package:clinic/features/profile/data/model/profile_model.dart';
 
 abstract class ProfileRemoteDataSource {
   Future<ProfileModel> getUserProfile();
+  Future<ProfileModel> updateProfile(ProfileModel request);
+
   Future<void> logout();
 }
 
@@ -24,6 +26,20 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       return ProfileModel.fromJson(data);
     } catch (e) {
       throw ServerException(message: 'Не удалось загрузить данные профиля');
+    }
+  }
+
+  @override
+  Future<ProfileModel> updateProfile(ProfileModel request) async {
+    try {
+      final data = await networkManager.putData(
+        url: 'auth/profile/',
+        data: request.toJson(),
+      );
+      return ProfileModel.fromJson(data);
+    } catch (e) {
+      throw ServerException(
+          message: 'Ошибка обновления информации профиля');
     }
   }
 

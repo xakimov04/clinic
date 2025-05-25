@@ -9,4 +9,13 @@ abstract class ProfileEvent extends Equatable {
 
 class GetProfileEvent extends ProfileEvent {}
 
+class UpdateProfileEvent extends ProfileEvent {
+  final ProfileEntities request;
+
+  const UpdateProfileEvent(this.request);
+
+  @override
+  List<Object> get props => [request];
+}
+
 class LogoutEvent extends ProfileEvent {}

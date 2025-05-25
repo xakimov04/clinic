@@ -1,4 +1,3 @@
-// lib/features/profile/domain/entities/user_entity.dart
 import 'package:equatable/equatable.dart';
 
 class ProfileEntities extends Equatable {
@@ -11,7 +10,7 @@ class ProfileEntities extends Equatable {
   final bool verified;
   final bool agreedToTerms;
   final bool biometricEnabled;
-  final String userType; // 'doctor' yoki 'patient'
+  final String userType; 
   final String name;
   final String? avatar;
   final String fullName;

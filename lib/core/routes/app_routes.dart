@@ -1,7 +1,12 @@
+// lib/core/routes/app_routes.dart
 import 'package:clinic/core/routes/routes.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
 import 'package:clinic/features/doctor/main/pages/doctor_main_screen.dart';
+import 'package:clinic/features/profile/presentation/pages/profile_details_screen.dart';
+import 'package:clinic/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:clinic/core/di/injection_container.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -37,6 +42,20 @@ class AppRouter {
         GoRoute(
           path: RoutePaths.doctorLogin,
           builder: (context, state) => const DoctorLoginScreen(),
+        ),
+
+        // Profile Details Screen (Global - ikkala role uchun)
+        GoRoute(
+          path: RoutePaths.profileDetailsScreen,
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final user = extra?['user'];
+            
+            return BlocProvider.value(
+              value: sl<ProfileBloc>(),
+              child: ProfileDetailsScreen(user: user),
+            );
+          },
         ),
 
         // Patient main screens

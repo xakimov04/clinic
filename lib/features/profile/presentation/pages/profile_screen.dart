@@ -1,4 +1,5 @@
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'package:flutter/cupertino.dart';
@@ -22,6 +23,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     context.read<ProfileBloc>().add(GetProfileEvent());
   }
 
+  void _navigateToDetails(ProfileEntities user) {
+    // Go Router orqali navigation
+    context.push(
+      RoutePaths.profileDetailsScreen,
+      extra: {'user': user},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ProfileBloc, ProfileState>(
@@ -35,6 +44,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             message: (state is ProfileError)
                 ? state.message
                 : (state as LogoutError).message,
+          );
+        }
+        if (state is ProfileUpdateSuccess) {
+          CustomSnackbar.showSuccess(
+            context: context,
+            message: 'Profil muvaffaqiyatli yangilandi!',
           );
         }
       },
@@ -169,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuItem(
                       icon: Icons.person_outline,
                       title: "Детали профиля",
-                      onTap: () {},
+                      onTap: () => _navigateToDetails(user),
                     ),
                     _buildDivider(),
                     _buildMenuItem(
@@ -360,7 +375,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: () {
-                  // Анимация нажатия
                   ScaffoldMessenger.of(context).clearSnackBars();
                   CustomSnackbar.showInfo(
                     context: context,
