@@ -21,6 +21,12 @@ class DoctorNavigationConfig {
       path: RoutePaths.doctorHome,
     ),
     NavItem(
+      label: 'Чат',
+      icon: CupertinoIcons.chat_bubble,
+      activeIcon: CupertinoIcons.chat_bubble_fill,
+      path: RoutePaths.doctorChat,
+    ),
+    NavItem(
       label: 'Профиль',
       icon: CupertinoIcons.person,
       activeIcon: CupertinoIcons.person_fill,
