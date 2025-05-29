@@ -1,4 +1,6 @@
 
+
+
 import 'export/di_export.dart';
 
 final sl = GetIt.instance;
@@ -11,4 +13,6 @@ Future<void> init() async {
   await registerAuthModule();
   await registerProfileModule();
   await registerHomeModule();
+  await registerChatModule();
+  await registerMessageModule();
 }

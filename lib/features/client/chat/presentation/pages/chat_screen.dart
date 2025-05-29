@@ -1,557 +1,607 @@
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
+import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
+import 'package:clinic/features/client/chat/presentation/bloc/chat_list/chat_list_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Чаты'),
-        backgroundColor: ColorConstants.backgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              _showSearchDialog(context);
-            },
-          ),
-        ],
-      ),
-      backgroundColor: ColorConstants.backgroundColor,
-      body: ListView.builder(
-        padding: 16.a,
-        itemCount: _getMockChats().length,
-        itemBuilder: (context, index) {
-          final chat = _getMockChats()[index];
-          return _ChatListItem(chat: chat);
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showNewChatDialog(context);
-        },
-        backgroundColor: ColorConstants.primaryColor,
-        child: const Icon(Icons.add_comment, color: Colors.white),
-      ),
-    );
-  }
-
-  void _showSearchDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Поиск чатов'),
-        content: TextFormField(
-          decoration: const InputDecoration(
-            hintText: 'Введите имя врача или тему',
-            prefixIcon: Icon(Icons.search),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Найти'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showNewChatDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Новый чат'),
-        content: const Text('Выберите врача для начала чата'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Продолжить'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<ChatModel> _getMockChats() {
-    return [
-      ChatModel(
-        id: '1',
-        name: 'Доктор Иванов',
-        specialty: 'Терапевт',
-        lastMessage: 'Результаты анализов готовы',
-        lastMessageTime: DateTime.now().subtract(const Duration(minutes: 5)),
-        isOnline: true,
-        unreadCount: 2,
-      ),
-      ChatModel(
-        id: '2',
-        name: 'Доктор Петрова',
-        specialty: 'Кардиолог',
-        lastMessage: 'Не забудьте принять лекарство',
-        lastMessageTime: DateTime.now().subtract(const Duration(hours: 2)),
-        isOnline: false,
-        unreadCount: 0,
-      ),
-      ChatModel(
-        id: '3',
-        name: 'Поддержка клиники',
-        specialty: 'Администратор',
-        lastMessage: 'Добро пожаловать в нашу клинику!',
-        lastMessageTime: DateTime.now().subtract(const Duration(days: 1)),
-        isOnline: true,
-        unreadCount: 1,
-      ),
-    ];
-  }
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatListItem extends StatelessWidget {
-  final ChatModel chat;
-
-  const _ChatListItem({required this.chat});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: 8.v,
-      child: ListTile(
-        leading: Stack(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: ColorConstants.primaryColor.withOpacity(0.1),
-              child: Text(
-                chat.name.split(' ').map((e) => e).take(2).join(),
-                style: const TextStyle(
-                  color: ColorConstants.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            if (chat.isOnline)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: ColorConstants.successColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                chat.name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Text(
-              _formatTime(chat.lastMessageTime),
-              style: const TextStyle(
-                color: ColorConstants.secondaryTextColor,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              chat.specialty,
-              style: const TextStyle(
-                color: ColorConstants.secondaryTextColor,
-                fontSize: 12,
-              ),
-            ),
-            4.h,
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    chat.lastMessage,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: chat.unreadCount > 0
-                          ? ColorConstants.textColor
-                          : ColorConstants.secondaryTextColor,
-                      fontWeight: chat.unreadCount > 0
-                          ? FontWeight.w500
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-                if (chat.unreadCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: ColorConstants.primaryColor,
-                      borderRadius: 10.circular,
-                    ),
-                    child: Text(
-                      chat.unreadCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-        onTap: () {
-          _openChat(context, chat);
-        },
-      ),
-    );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} мин';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} ч';
-    } else {
-      return '${time.day}.${time.month}';
-    }
-  }
-
-  void _openChat(BuildContext context, ChatModel chat) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatDetailScreen(chat: chat),
-      ),
-    );
-  }
-}
-
-class ChatModel {
-  final String id;
-  final String name;
-  final String specialty;
-  final String lastMessage;
-  final DateTime lastMessageTime;
-  final bool isOnline;
-  final int unreadCount;
-
-  ChatModel({
-    required this.id,
-    required this.name,
-    required this.specialty,
-    required this.lastMessage,
-    required this.lastMessageTime,
-    required this.isOnline,
-    required this.unreadCount,
-  });
-}
-
-class ChatDetailScreen extends StatefulWidget {
-  final ChatModel chat;
-
-  const ChatDetailScreen({super.key, required this.chat});
-
-  @override
-  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
-}
-
-class _ChatDetailScreenState extends State<ChatDetailScreen> {
-  final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final List<MessageModel> _messages = [];
+class _ChatScreenState extends State<ChatScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadMessages();
+    _initializeAnimations();
+    _loadChats();
   }
 
-  void _loadMessages() {
-    // Mock messages
-    _messages.addAll([
-      MessageModel(
-        id: '1',
-        text: 'Здравствуйте! Как дела с лечением?',
-        isFromMe: false,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
-      ),
-      MessageModel(
-        id: '2',
-        text: 'Здравствуйте! Спасибо, чувствую себя лучше',
-        isFromMe: true,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 9)),
-      ),
-      MessageModel(
-        id: '3',
-        text: 'Отлично! Результаты анализов готовы, можете их забрать',
-        isFromMe: false,
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-    ]);
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    _animationController.forward();
+  }
+
+  void _loadChats() {
+    context.read<ChatListBloc>().add(const GetChatsListEvent());
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: ColorConstants.backgroundColor,
+      appBar: _buildAppBar(),
+      body: BlocConsumer<ChatListBloc, ChatListState>(
+        listener: (context, state) {
+          if (state is ChatListError) {
+            CustomSnackbar.showError(
+              context: context,
+              message: state.message,
+            );
+          }
+        },
+        builder: (context, state) {
+          return RefreshIndicator.adaptive(
+            onRefresh: () async {
+              context.read<ChatListBloc>().add(const RefreshChatsListEvent());
+            },
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: _buildContent(state),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      title: BlocBuilder<ChatListBloc, ChatListState>(
+        builder: (context, state) {
+          return Column(
+            children: [
+              const Text(
+                'Чаты',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: ColorConstants.textColor,
+                ),
+              ),
+              if (state is ChatListLoaded && state.hasUnreadMessages) ...[
+                2.h,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColorConstants.primaryColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${state.totalUnreadCount} новых',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(ChatListState state) {
+    if (state is ChatListLoading) {
+      return _buildLoadingState();
+    } else if (state is ChatListLoaded || state is ChatListRefreshing) {
+      final chats = state is ChatListLoaded
+          ? state.chats
+          : (state as ChatListRefreshing).currentChats;
+
+      return _buildLoadedState(chats, state is ChatListRefreshing);
+    } else if (state is ChatListEmpty) {
+      return _buildEmptyState(state.message);
+    } else if (state is ChatListError) {
+      return _buildErrorState(state.message);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 40,
+            width: 40,
+            child: Platform.isIOS
+                ? const CupertinoActivityIndicator(
+                    animating: true,
+                    color: ColorConstants.primaryColor,
+                  )
+                : const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        ColorConstants.primaryColor),
+                  ),
+          ),
+          16.h,
+          const Text(
+            'Загружаем чаты...',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: ColorConstants.secondaryTextColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadedState(List<ChatEntity> chats, bool isRefreshing) {
+    return Stack(
+      children: [
+        ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          itemCount: chats.length,
+          physics: const BouncingScrollPhysics(),
+          itemBuilder: (context, index) {
+            final chat = chats[index];
+            return _buildAnimatedChatItem(chat, index);
+          },
+        ),
+
+        // Refresh indicator
+        if (isRefreshing)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              color: ColorConstants.primaryColor.withOpacity(0.1),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          ColorConstants.primaryColor),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Обновляем...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: ColorConstants.primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildAnimatedChatItem(ChatEntity chat, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 1.0, end: 0.0),
+      duration: Duration(milliseconds: 300 + (index * 50)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * value),
+          child: Opacity(
+            opacity: 1 - value,
+            child: child,
+          ),
+        );
+      },
+      child: _ChatListItem(
+        chat: chat,
+        onTap: () => _openChat(chat),
+        onMarkAsRead:
+            chat.hasUnreadMessages ? () => _markAsRead(chat.id) : null,
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(widget.chat.name),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: ColorConstants.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 40,
+                color: ColorConstants.primaryColor,
+              ),
+            ),
+            24.h,
             Text(
-              widget.chat.specialty,
+              'Нет активных чатов',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: ColorConstants.textColor,
+              ),
+            ),
+            8.h,
+            Text(
+              message,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 color: ColorConstants.secondaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: ColorConstants.errorColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                size: 40,
+                color: ColorConstants.errorColor,
+              ),
+            ),
+            24.h,
+            const Text(
+              'Ошибка загрузки',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: ColorConstants.textColor,
+              ),
+            ),
+            8.h,
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                color: ColorConstants.secondaryTextColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            32.h,
+            ElevatedButton.icon(
+              onPressed: _loadChats,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Повторить'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ColorConstants.primaryColor,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.video_call),
-            onPressed: () {
-              _showVideoCallDialog(context);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              _showMoreOptions(context);
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: 16.a,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _MessageBubble(message: message);
-              },
-            ),
-          ),
-          Container(
-            padding: 16.a,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 1,
-                  offset: const Offset(0, -1),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Введите сообщение...',
-                      border: OutlineInputBorder(
-                        borderRadius: 20.circular,
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: ColorConstants.backgroundColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    maxLines: null,
-                  ),
-                ),
-                8.w,
-                Container(
-                  decoration: BoxDecoration(
-                    color: ColorConstants.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    onPressed: _sendMessage,
-                    icon: const Icon(Icons.send, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isNotEmpty) {
-      setState(() {
-        _messages.add(MessageModel(
-          id: DateTime.now().toString(),
-          text: _messageController.text,
-          isFromMe: true,
-          timestamp: DateTime.now(),
-        ));
-      });
-      _messageController.clear();
-      _scrollToBottom();
-    }
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  void _showVideoCallDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Видеозвонок'),
-        content: Text('Начать видеозвонок с ${widget.chat.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Отмена'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Начать'),
-          ),
-        ],
-      ),
+  void _openChat(ChatEntity chat) {
+    // Go Router orqali chat detail sahifasiga o'tish
+    context.push(
+      '/chat/${chat.id}',
+      extra: {
+        'chat': chat,
+      },
     );
   }
 
-  void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.history),
-            title: const Text('История чата'),
-            onTap: () => Navigator.of(context).pop(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.file_copy),
-            title: const Text('Отправить файл'),
-            onTap: () => Navigator.of(context).pop(),
-          ),
-          ListTile(
-            leading: const Icon(Icons.clear),
-            title: const Text('Очистить чат'),
-            onTap: () => Navigator.of(context).pop(),
-          ),
-        ],
-      ),
-    );
+  void _markAsRead(int chatId) {
+    context.read<ChatListBloc>().add(MarkChatAsReadEvent(chatId));
   }
 }
 
-class _MessageBubble extends StatelessWidget {
-  final MessageModel message;
+class _ChatListItem extends StatelessWidget {
+  final ChatEntity chat;
+  final VoidCallback onTap;
+  final VoidCallback? onMarkAsRead;
 
-  const _MessageBubble({required this.message});
+  const _ChatListItem({
+    required this.chat,
+    required this.onTap,
+    this.onMarkAsRead,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment:
-          message.isFromMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: 8.v,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: message.isFromMe
-              ? ColorConstants.primaryColor
-              : Colors.grey.shade200,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        elevation: chat.hasUnreadMessages ? 2 : 1,
+        shadowColor: chat.hasUnreadMessages
+            ? ColorConstants.primaryColor.withOpacity(0.2)
+            : Colors.black.withOpacity(0.05),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message.text,
-              style: TextStyle(
-                color: message.isFromMe ? Colors.white : Colors.black87,
-              ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: chat.hasUnreadMessages
+                  ? Border.all(
+                      color: ColorConstants.primaryColor.withOpacity(0.3),
+                      width: 1,
+                    )
+                  : null,
             ),
-            4.h,
-            Text(
-              '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
-              style: TextStyle(
-                color: message.isFromMe ? Colors.white70 : Colors.grey.shade600,
-                fontSize: 10,
-              ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAvatar(),
+                12.w,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      6.h,
+                      _buildLastMessage(),
+                    ],
+                  ),
+                ),
+                _buildTrailing(),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
 
-class MessageModel {
-  final String id;
-  final String text;
-  final bool isFromMe;
-  final DateTime timestamp;
+  Widget _buildAvatar() {
+    return Stack(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                ColorConstants.primaryColor,
+                ColorConstants.primaryColor.withOpacity(0.7),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: ColorConstants.primaryColor.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              chat.doctorName.isNotEmpty
+                  ? chat.doctorName[0].toUpperCase()
+                  : 'Д',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
 
-  MessageModel({
-    required this.id,
-    required this.text,
-    required this.isFromMe,
-    required this.timestamp,
-  });
+        // Online indicator
+        if (chat.isActive)
+          Positioned(
+            bottom: 2,
+            right: 2,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: ColorConstants.successColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Др. ${chat.doctorName}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight:
+                  chat.hasUnreadMessages ? FontWeight.w600 : FontWeight.w500,
+              color: ColorConstants.textColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        Text(
+          chat.formattedTime,
+          style: TextStyle(
+            fontSize: 12,
+            color: chat.hasUnreadMessages
+                ? ColorConstants.primaryColor
+                : ColorConstants.secondaryTextColor,
+            fontWeight:
+                chat.hasUnreadMessages ? FontWeight.w500 : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLastMessage() {
+    final lastMessage = chat.lastMessage;
+
+    if (lastMessage == null) {
+      return Text(
+        'Нет сообщений',
+        style: TextStyle(
+          fontSize: 14,
+          color: ColorConstants.secondaryTextColor,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        if (lastMessage.isFromCurrentUser) ...[
+          Icon(
+            Icons.reply_rounded,
+            size: 14,
+            color: ColorConstants.secondaryTextColor,
+          ),
+          4.w,
+        ],
+        Expanded(
+          child: Text(
+            lastMessage.displayContent,
+            style: TextStyle(
+              fontSize: 14,
+              color: chat.hasUnreadMessages
+                  ? ColorConstants.textColor
+                  : ColorConstants.secondaryTextColor,
+              fontWeight:
+                  chat.hasUnreadMessages ? FontWeight.w500 : FontWeight.normal,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrailing() {
+    return Column(
+      children: [
+        if (chat.hasUnreadMessages) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: ColorConstants.primaryColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              chat.unreadCount > 99 ? '99+' : chat.unreadCount.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          if (onMarkAsRead != null) ...[
+            8.h,
+            GestureDetector(
+              onTap: onMarkAsRead,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: ColorConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  Icons.done_all_rounded,
+                  size: 16,
+                  color: ColorConstants.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ] else ...[
+          const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: ColorConstants.secondaryTextColor,
+          ),
+        ],
+      ],
+    );
+  }
 }

@@ -36,3 +36,5 @@ export 'package:clinic/features/auth/domain/usecases/send_otp.dart';
 export 'package:clinic/features/auth/domain/usecases/verify_otp.dart';
 export 'package:clinic/features/auth/domain/usecases/doctor_login.dart';
 export 'package:clinic/features/profile/domain/usecase/update_profile.dart';
+export 'package:clinic/core/di/modules/chat_module.dart';
+export 'package:clinic/core/di/modules/message_module.dart';

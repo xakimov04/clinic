@@ -27,7 +27,16 @@ class ProfileRepositoryImpl implements ProfileRepository {
         await localDataSource.cacheUserProfile(remoteUser);
         return Right(remoteUser);
       } on ServerException catch (e) {
-        return Left(ServerFailure(message: e.message));
+        // Server xatosi bo'lsa, cache'dan olishga harakat qilamiz
+        try {
+          final localUser = await localDataSource.getCachedUserProfile();
+          return Right(localUser);
+        } on CacheException {
+          return Left(ServerFailure(message: e.message));
+        }
+      } catch (e) {
+        return Left(
+            UnexpectedFailure(message: 'Неожиданная ошибка: ${e.toString()}'));
       }
     } else {
       try {
@@ -44,40 +53,41 @@ class ProfileRepositoryImpl implements ProfileRepository {
       ProfileEntities request) async {
     if (await platformInfo.isNetworkAvailable()) {
       try {
-        final updateModel = ProfileModel(
-          id: request.id,
-          username: request.username,
-          email: request.email,
-          verified: request.verified,
-          agreedToTerms: request.agreedToTerms,
-          biometricEnabled: request.biometricEnabled,
-          userType: request.userType,
-          name: request.name,
-          fullName: request.fullName,
-          avatar: request.avatar,
-          dateOfBirth: request.dateOfBirth,
-          gender: request.gender,
-          isAvailable: request.isAvailable,
-          medicalLicense: request.medicalLicense,
-          phoneNumber: request.phoneNumber,
-          specialization: request.specialization,
-        );
+        // Entity ni Model ga aylantirish
+        final ProfileModel updateModel;
+        if (request is ProfileModel) {
+          updateModel = request;
+        } else {
+          updateModel = ProfileModel.fromEntity(request);
+        }
+
+        // Remote update
         final updatedProfile =
             await remoteDataSource.updateProfile(updateModel);
 
-        // Yangilangan ma'lumotni cache'ga saqlash
+        // Cache'ni yangilash
         await localDataSource.cacheUserProfile(updatedProfile);
 
         return Right(updatedProfile);
       } on ServerException catch (e) {
         return Left(ServerFailure(message: e.message));
       } catch (e) {
-        return Left(UnexpectedFailure(message: ' '));
+        return Left(UnexpectedFailure(
+          message: 'Ошибка при обновлении профиля: ${e.toString()}',
+        ));
       }
     } else {
+      // Internet yo'q bo'lsa, faqat cache'ni yangilaymiz
       try {
-        final localUser = await localDataSource.getCachedUserProfile();
-        return Right(localUser);
+        final ProfileModel updateModel;
+        if (request is ProfileModel) {
+          updateModel = request;
+        } else {
+          updateModel = ProfileModel.fromEntity(request);
+        }
+
+        await localDataSource.cacheUserProfile(updateModel);
+        return Right(updateModel);
       } on CacheException catch (e) {
         return Left(CacheFailure(message: e.message));
       }
@@ -91,7 +101,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         try {
           await remoteDataSource.logout();
         } catch (e) {
-          // Даже если удаленный выход не удался, мы все равно очищаем локальные данные
+          // Remote logout muvaffaqiyatsiz bo'lsa ham, local ma'lumotlarni tozalaymiz
         }
       }
 
@@ -100,7 +110,9 @@ class ProfileRepositoryImpl implements ProfileRepository {
     } on CacheException catch (e) {
       return Left(CacheFailure(message: e.message));
     } catch (e) {
-      return Left(UnexpectedFailure());
+      return Left(UnexpectedFailure(
+        message: 'Ошибка при выходе из системы: ${e.toString()}',
+      ));
     }
   }
 }

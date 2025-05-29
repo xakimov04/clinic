@@ -1,5 +1,8 @@
 // lib/core/routes/app_routes.dart
 import 'package:clinic/core/routes/routes.dart';
+import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
+import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart';
+import 'package:clinic/features/client/chat/presentation/pages/chat_detail_screen.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
 import 'package:clinic/features/doctor/main/pages/doctor_main_screen.dart';
 import 'package:clinic/features/profile/presentation/pages/profile_details_screen.dart';
@@ -43,14 +46,38 @@ class AppRouter {
           path: RoutePaths.doctorLogin,
           builder: (context, state) => const DoctorLoginScreen(),
         ),
+        GoRoute(
+          path: RoutePaths.chatDetail,
+          builder: (context, state) {
+            final chatIdStr = state.pathParameters['chatId']!;
+            int.parse(chatIdStr);
 
+            // Extra ma'lumotlardan chat entity'ni olish
+            final extra = state.extra as Map<String, dynamic>?;
+            final chat = extra?['chat'] as ChatEntity?;
+
+            if (chat == null) {
+              // Agar chat entity berilmagan bo'lsa, error page'ga yo'naltirish
+              return const Scaffold(
+                body: Center(
+                  child: Text('Chat topilmadi'),
+                ),
+              );
+            }
+
+            return BlocProvider(
+              create: (context) => sl<ChatDetailBloc>(),
+              child: ChatDetailScreen(chat: chat),
+            );
+          },
+        ),
         // Profile Details Screen (Global - ikkala role uchun)
         GoRoute(
           path: RoutePaths.profileDetailsScreen,
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             final user = extra?['user'];
-            
+
             return BlocProvider.value(
               value: sl<ProfileBloc>(),
               child: ProfileDetailsScreen(user: user),

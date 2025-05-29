@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -357,66 +358,42 @@ class _DoctorItemsState extends State<DoctorItems>
   }
 
   Widget _buildDoctorAvatar(DoctorEntity doctor) {
-    return Container(
-      width: 70,
-      height: 70,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ColorConstants.primaryColor,
-            ColorConstants.primaryColor.withOpacity(0.6),
-          ],
+    return Stack(
+      children: [
+        CustomCachedImage(
+          imageUrl: doctor.avatar,
+          width: 70,
+          height: 70,
+          type: CustomImageType.circle,
+          backgroundColor: ColorConstants.primaryColor.withOpacity(0.2),
+          fit: BoxFit.cover,
         ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: ColorConstants.primaryColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Center(
-            child: Text(
-              doctor.fullName[0].toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8),
+                bottomRight: Radius.circular(14),
               ),
             ),
-          ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(14),
-                ),
-              ),
-              child: Icon(
-                Icons.medical_services_rounded,
-                size: 14,
-                color: ColorConstants.primaryColor,
-              ),
+            child: Icon(
+              Icons.medical_services_rounded,
+              size: 14,
+              color: ColorConstants.primaryColor,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildDoctorName(DoctorEntity doctor) {
     return Text(
-      'Др. ${doctor.fullName}',
+      doctor.fullName,
       style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,

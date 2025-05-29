@@ -8,10 +8,11 @@ class RoutePaths {
   static const String newsScreen = '/news';
   static const String appointmentsScreen = '/appointments';
   static const String chatScreen = '/chat';
-
+  static const String chatDetail = '/chat/:chatId'; // Chat detail page
   // Doctor routes
   static const String doctorLogin = '/doctor-login';
   static const String doctorHome = '/doctor-home';
   static const String doctorProfile = '/doctor-profile';
-  static const String doctorProfileDetails = '/doctor-profile/details'; // Doctor uchun
+  static const String doctorProfileDetails =
+      '/doctor-profile/details'; // Doctor uchun
 }

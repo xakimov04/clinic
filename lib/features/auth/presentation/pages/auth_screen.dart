@@ -1,5 +1,6 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/core/ui/widgets/buttons/custom_button.dart';
 import 'package:clinic/core/ui/widgets/inputs/custom_text_feild.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
@@ -26,7 +27,7 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
-  final _phoneController = TextEditingController(text: "+998");
+  final _phoneController = TextEditingController(text: "+7");
   final _phoneFormKey = GlobalKey<FormState>();
   final GlobalKey<OtpInputWidgetState> _otpKey =
       GlobalKey<OtpInputWidgetState>();
@@ -197,13 +198,10 @@ class _AuthScreenState extends State<AuthScreen>
 
                         20.h,
 
-                        // VK authorization va Doctor login (faqat telefon kiritish paytida)
                         if (!_codeSent) ...[
                           _buildDivider(),
                           16.h,
                           _buildSocialAuth(),
-                          16.h,
-                          _buildDoctorLoginButton(),
                         ],
 
                         const Spacer(flex: 1),
@@ -255,37 +253,42 @@ class _AuthScreenState extends State<AuthScreen>
     return Column(
       children: [
         // Logo
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: ColorConstants.shadowColor.withOpacity(0.05),
-                blurRadius: 10,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
+        GestureDetector(
+          onTap: () {
+            context.go(RoutePaths.doctorLogin);
+          },
           child: Container(
-            margin: const EdgeInsets.all(15),
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  ColorConstants.primaryColor,
-                  ColorConstants.primaryColor.withOpacity(0.8),
-                ],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.local_hospital_rounded,
-              size: 30,
               color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: ColorConstants.shadowColor.withOpacity(0.05),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Container(
+              margin: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    ColorConstants.primaryColor,
+                    ColorConstants.primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_hospital_rounded,
+                size: 30,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
@@ -532,46 +535,6 @@ class _AuthScreenState extends State<AuthScreen>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildDoctorLoginButton() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: ColorConstants.hintColor.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.go('/doctor-login'),
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  CupertinoIcons.person_crop_circle,
-                ),
-                8.w,
-                Text(
-                  'Вход для врачей',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
