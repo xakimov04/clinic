@@ -17,7 +17,6 @@ abstract class MessageRemoteDataSource {
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
   final NetworkManager networkManager;
 
-  // Stream controller'lar har bir chat uchun
   final Map<int, StreamController<List<MessageModel>>> _messageStreams = {};
   final Map<int, Timer?> _pollingTimers = {};
 
@@ -28,7 +27,6 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     try {
       final response = await networkManager.fetchData(
         url: 'chats/$chatId/messages/',
-        useAuthorization: false,
       );
 
       final List<MessageModel> messages = (response as List)
@@ -54,7 +52,6 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     try {
       final response = await networkManager.postData(
         url: 'chats/$chatId/send/',
-        useAuthorization: false,
         data: request.toJson(),
       );
 
