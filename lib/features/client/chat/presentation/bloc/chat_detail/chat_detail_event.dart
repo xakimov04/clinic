@@ -29,15 +29,6 @@ final class SendMessageEvent extends ChatDetailEvent {
   List<Object> get props => [chatId, content];
 }
 
-final class MarkAllAsReadEvent extends ChatDetailEvent {
-  final int chatId;
-
-  const MarkAllAsReadEvent(this.chatId);
-
-  @override
-  List<Object> get props => [chatId];
-}
-
 final class MessagesUpdatedEvent extends ChatDetailEvent {
   final List<MessageEntity> messages;
 

@@ -87,7 +87,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     _messageFocusNode.dispose();
     _animationController.dispose();
 
-    // BLoC'dagi stream'ni tozalash
     context.read<ChatDetailBloc>().disposeChat();
     super.dispose();
   }

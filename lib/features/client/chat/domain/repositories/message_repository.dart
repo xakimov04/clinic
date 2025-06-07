@@ -15,10 +15,4 @@ abstract class MessageRepository {
 
   /// Xabarlar streamini olish (real-time)
   Stream<List<MessageEntity>> getMessagesStream(int chatId);
-
-  /// Xabarni o'qilgan deb belgilash
-  Future<Either<Failure, void>> markMessageAsRead(int chatId, int messageId);
-
-  /// Barcha xabarlarni o'qilgan deb belgilash
-  Future<Either<Failure, void>> markAllMessagesAsRead(int chatId);
 }

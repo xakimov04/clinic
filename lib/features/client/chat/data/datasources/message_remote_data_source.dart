@@ -12,8 +12,6 @@ abstract class MessageRemoteDataSource {
     SendMessageRequestModel request,
   );
   Stream<List<MessageModel>> getMessagesStream(int chatId);
-  Future<Either<Failure, void>> markMessageAsRead(int chatId, int messageId);
-  Future<Either<Failure, void>> markAllMessagesAsRead(int chatId);
 }
 
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
@@ -125,49 +123,6 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     );
   }
 
-  @override
-  Future<Either<Failure, void>> markMessageAsRead(
-      int chatId, int messageId) async {
-    try {
-      await networkManager.postData(
-        url: 'chats/$chatId/messages/$messageId/mark-read/',
-        useAuthorization: false,
-        data: {},
-      );
-
-      // Stream'ni yangilash
-      _updateMessageStream(chatId);
-
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(
-        message:
-            'Сообщение как прочитанное отметить не удалось: ${e.toString()}',
-      ));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> markAllMessagesAsRead(int chatId) async {
-    try {
-      await networkManager.postData(
-        url: 'chats/$chatId/mark-all-read/',
-        useAuthorization: false,
-        data: {},
-      );
-
-      // Stream'ni yangilash
-      _updateMessageStream(chatId);
-
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure(
-        message:
-            'Все сообщения как прочитанные отметить не удалось: ${e.toString()}',
-      ));
-    }
-  }
-
   // Stream'larni tozalash
   void dispose() {
     for (final timer in _pollingTimers.values) {
@@ -180,7 +135,6 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     }
     _messageStreams.clear();
   }
-
 
   void closeStream(int chatId) {
     _pollingTimers[chatId]?.cancel();

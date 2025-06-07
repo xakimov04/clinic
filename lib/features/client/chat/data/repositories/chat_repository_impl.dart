@@ -27,8 +27,5 @@ class ChatRepositoryImpl implements ChatRepository {
     );
   }
 
-  @override
-  Future<Either<Failure, void>> markChatAsRead(int chatId) async {
-    return await remoteDataSource.markChatAsRead(chatId);
-  }
+ 
 }

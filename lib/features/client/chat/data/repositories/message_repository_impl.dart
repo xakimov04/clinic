@@ -38,14 +38,4 @@ class MessageRepositoryImpl implements MessageRepository {
   Stream<List<MessageEntity>> getMessagesStream(int chatId) {
     return remoteDataSource.getMessagesStream(chatId);
   }
-
-  @override
-  Future<Either<Failure, void>> markMessageAsRead(int chatId, int messageId) {
-    return remoteDataSource.markMessageAsRead(chatId, messageId);
-  }
-
-  @override
-  Future<Either<Failure, void>> markAllMessagesAsRead(int chatId) {
-    return remoteDataSource.markAllMessagesAsRead(chatId);
-  }
 }

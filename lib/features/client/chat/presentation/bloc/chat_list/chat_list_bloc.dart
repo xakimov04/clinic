@@ -91,19 +91,5 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     }).toList();
 
     emit(ChatListLoaded(updatedChats));
-
-    // Backend'ga so'rov yuboramiz
-    final result = await chatRepository.markChatAsRead(event.chatId);
-
-    // Agar xatolik bo'lsa, avvalgi holatga qaytaramiz
-    result.fold(
-      (failure) {
-        emit(ChatListLoaded(currentState.chats));
-        // Xatolik haqida bildirishnoma ko'rsatish mumkin
-      },
-      (_) {
-        // Muvaffaqiyat - hech narsa qilmaymiz, chunki UI allaqachon yangilangan
-      },
-    );
   }
 }

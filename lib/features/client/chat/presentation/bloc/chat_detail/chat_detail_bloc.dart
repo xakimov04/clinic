@@ -29,7 +29,6 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
   }) : super(ChatDetailInitial()) {
     on<LoadMessagesEvent>(_onLoadMessages);
     on<SendMessageEvent>(_onSendMessage);
-    on<MarkAllAsReadEvent>(_onMarkAllAsRead);
     on<MessagesUpdatedEvent>(_onMessagesUpdated);
   }
 
@@ -62,11 +61,6 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
         (failure) => emit(ChatDetailError(failure.message)),
         (messages) {
           emit(ChatDetailLoaded(messages: messages));
-
-          // Xabarlarni o'qilgan deb belgilash
-          if (messages.any((m) => !m.isRead && !m.isFromCurrentUser)) {
-            add(MarkAllAsReadEvent(event.chatId));
-          }
         },
       );
     } catch (e) {
@@ -122,13 +116,6 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
         emit(currentState.copyWith(isSendingMessage: false));
       },
     );
-  }
-
-  Future<void> _onMarkAllAsRead(
-    MarkAllAsReadEvent event,
-    Emitter<ChatDetailState> emit,
-  ) async {
-    await messageRepository.markAllMessagesAsRead(event.chatId);
   }
 
   void _onMessagesUpdated(
