@@ -97,25 +97,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
                   color: ColorConstants.textColor,
                 ),
               ),
-              if (state is ChatListLoaded && state.hasUnreadMessages) ...[
-                2.h,
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: ColorConstants.primaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${state.totalUnreadCount} новых',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
             ],
           );
         },
@@ -190,7 +171,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
             children: [
               // Aktiv chatlar (yangi xabarlar bilan)
               if (activeChats.isNotEmpty) ...[
-                _buildSectionHeader('Новые сообщения', activeChats.length),
                 8.h,
                 ...activeChats.asMap().entries.map((entry) {
                   return _buildAnimatedChatItem(entry.value, entry.key,
@@ -201,7 +181,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
 
               // Oddiy chatlar
               if (regularChats.isNotEmpty) ...[
-                _buildSectionHeader('Все пациенты', regularChats.length),
                 8.h,
                 ...regularChats.asMap().entries.map((entry) {
                   return _buildAnimatedChatItem(entry.value, entry.key);
@@ -246,40 +225,6 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title, int count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: ColorConstants.textColor,
-            ),
-          ),
-          8.w,
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: ColorConstants.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              count.toString(),
-              style: const TextStyle(
-                fontSize: 12,
-                color: ColorConstants.primaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

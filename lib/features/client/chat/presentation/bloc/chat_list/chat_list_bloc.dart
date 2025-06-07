@@ -45,7 +45,6 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     RefreshChatsListEvent event,
     Emitter<ChatListState> emit,
   ) async {
-    // Agar hozirda chatlar mavjud bo'lsa, refreshing holatini ko'rsatamiz
     if (state is ChatListLoaded) {
       emit(ChatListRefreshing((state as ChatListLoaded).chats));
     }

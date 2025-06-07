@@ -119,7 +119,6 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
         builder: (context, state) {
           return Column(
             children: [
-              _buildPatientInfoCard(),
               Expanded(
                 child: FadeTransition(
                   opacity: _fadeAnimation,
@@ -131,8 +130,6 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
           );
         },
       ),
-      floatingActionButton:
-          _showScrollToBottom ? _buildScrollToBottomButton() : null,
     );
   }
 
@@ -197,56 +194,6 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPatientInfoCard() {
-    return Container(
-      margin: const EdgeInsets.all(8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ColorConstants.accentGreen.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: ColorConstants.accentGreen.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.person_outline,
-            color: ColorConstants.accentGreen,
-            size: 20,
-          ),
-          8.w,
-          Expanded(
-            child: Text(
-              'Консультация с ${widget.chat.patientName}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: ColorConstants.textColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: ColorConstants.successColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'Онлайн',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
             ),
           ),
         ],
@@ -570,17 +517,6 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildScrollToBottomButton() {
-    return FloatingActionButton.small(
-      onPressed: _scrollToBottom,
-      backgroundColor: ColorConstants.primaryColor,
-      child: const Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: Colors.white,
       ),
     );
   }
