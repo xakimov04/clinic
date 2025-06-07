@@ -130,8 +130,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
           );
         },
       ),
-      floatingActionButton:
-          _showScrollToBottom ? _buildScrollToBottomButton() : null,
     );
   }
 
@@ -178,7 +176,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Др. ${widget.chat.doctorName}',
+                  widget.chat.doctorName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -187,15 +185,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (widget.chat.isActive)
-                  const Text(
-                    'В сети',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: ColorConstants.successColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
               ],
             ),
           ),
@@ -237,14 +226,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                     valueColor: AlwaysStoppedAnimation<Color>(
                         ColorConstants.primaryColor),
                   ),
-          ),
-          16.h,
-          const Text(
-            'Загружаем сообщения...',
-            style: TextStyle(
-              fontSize: 14,
-              color: ColorConstants.secondaryTextColor,
-            ),
           ),
         ],
       ),
@@ -519,17 +500,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildScrollToBottomButton() {
-    return FloatingActionButton.small(
-      onPressed: _scrollToBottom,
-      backgroundColor: ColorConstants.primaryColor,
-      child: const Icon(
-        Icons.keyboard_arrow_down_rounded,
-        color: Colors.white,
       ),
     );
   }

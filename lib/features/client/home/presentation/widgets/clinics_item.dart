@@ -1,6 +1,4 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
+import 'package:clinic/features/client/home/presentation/widgets/home_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/constants/color_constants.dart';
@@ -19,6 +17,7 @@ class _ClinicsItemState extends State<ClinicsItem>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -30,11 +29,24 @@ class _ClinicsItemState extends State<ClinicsItem>
   void _initAnimations() {
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.elasticOut),
+      ),
     );
 
     _animationController.forward();
@@ -54,95 +66,58 @@ class _ClinicsItemState extends State<ClinicsItem>
   Widget build(BuildContext context) {
     return BlocBuilder<ClinicsBloc, ClinicsState>(
       builder: (context, state) {
-        if (state is ClinicsLoading) {
-          return _buildLoadingState();
-        } else if (state is ClinicsLoaded) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: _buildLoadedState(state.clinics),
-          );
-        } else if (state is ClinicsEmpty) {
-          return _buildEmptyState(state.message);
-        } else if (state is ClinicsError) {
-          return _buildErrorState(state.message);
-        }
-        return const SizedBox.shrink();
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: _buildStateWidget(state),
+        );
       },
     );
   }
 
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 40,
-            width: 40,
-            child: Platform.isIOS
-                ? CupertinoActivityIndicator(
-                    animating: true,
-                    color: ColorConstants.primaryColor,
-                  )
-                : CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        ColorConstants.primaryColor.withOpacity(0.8)),
-                  ),
-          ),
-          16.h,
-          const Text(
-            'Загрузка клиник...',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: ColorConstants.secondaryTextColor,
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget _buildStateWidget(ClinicsState state) {
+    if (state is ClinicsLoading) {
+      return HomeLoading(
+        text: 'Загрузка клиник...',
+      );
+    } else if (state is ClinicsLoaded) {
+      return SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _buildLoadedState(state.clinics),
+        ),
+      );
+    } else if (state is ClinicsEmpty) {
+      return _buildEmptyState(state.message);
+    } else if (state is ClinicsError) {
+      return _buildErrorState(state.message);
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildErrorState(String message) {
     return Container(
       margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            spreadRadius: 1,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildErrorIcon(),
-          16.h,
-          const Text(
-            'Не удалось загрузить данные',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: ColorConstants.textColor,
-            ),
-          ),
-          8.h,
+          20.h,
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: 14,
               color: ColorConstants.secondaryTextColor,
+              height: 1.4,
             ),
           ),
-          20.h,
+          24.h,
           _buildRetryButton(),
         ],
       ),
@@ -151,16 +126,23 @@ class _ClinicsItemState extends State<ClinicsItem>
 
   Widget _buildErrorIcon() {
     return Container(
-      width: 56,
-      height: 56,
+      width: 72,
+      height: 72,
       decoration: BoxDecoration(
-        color: ColorConstants.errorColor.withOpacity(0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorConstants.errorColor.withOpacity(0.15),
+            ColorConstants.errorColor.withOpacity(0.05),
+          ],
+        ),
         shape: BoxShape.circle,
       ),
       child: Icon(
-        Icons.error_outline_rounded,
+        Icons.medical_services_outlined,
         color: ColorConstants.errorColor,
-        size: 28,
+        size: 32,
       ),
     );
   }
@@ -170,42 +152,40 @@ class _ClinicsItemState extends State<ClinicsItem>
       color: Colors.transparent,
       child: InkWell(
         onTap: _loadClinics,
-        borderRadius: BorderRadius.circular(10),
-        child: Ink(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           decoration: BoxDecoration(
             gradient: ColorConstants.primaryGradient,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: ColorConstants.primaryColor.withOpacity(0.3),
-                blurRadius: 10,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
+                color: ColorConstants.primaryColor.withOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: -3,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.refresh_rounded,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.refresh_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              8.w,
+              Text(
+                'Qayta urinish',
+                style: TextStyle(
                   color: Colors.white,
-                  size: 16,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Повторить',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -213,66 +193,71 @@ class _ClinicsItemState extends State<ClinicsItem>
   }
 
   Widget _buildEmptyState(String message) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              spreadRadius: 0,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: ColorConstants.borderColor.withOpacity(0.3),
+          width: 1,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: ColorConstants.primaryColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  ColorConstants.primaryColor.withOpacity(0.15),
+                  ColorConstants.primaryColor.withOpacity(0.05),
+                ],
               ),
-              child: Icon(
-                Icons.local_hospital_outlined,
-                size: 28,
-                color: ColorConstants.primaryColor,
-              ),
+              shape: BoxShape.circle,
             ),
-            16.h,
-            const Text(
-              'Клиники не найдены',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: ColorConstants.textColor,
-              ),
+            child: Icon(
+              Icons.local_hospital_outlined,
+              size: 36,
+              color: ColorConstants.primaryColor,
             ),
-            8.h,
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 12,
-                color: ColorConstants.secondaryTextColor,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          20.h,
+          Text(
+            'Klinikalar topilmadi',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: ColorConstants.textColor,
             ),
-          ],
-        ),
+          ),
+          8.h,
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              color: ColorConstants.secondaryTextColor,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLoadedState(List<ClinicsEntity> clinics) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: clinics.length,
+      shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (context, index) => 12.h,
       itemBuilder: (context, index) {
         final clinic = clinics[index];
         return _buildAnimatedClinicCard(clinic, index);
@@ -283,11 +268,11 @@ class _ClinicsItemState extends State<ClinicsItem>
   Widget _buildAnimatedClinicCard(ClinicsEntity clinic, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 1.0, end: 0.0),
-      duration: Duration(milliseconds: 500 + (index * 100)),
+      duration: Duration(milliseconds: 400 + (index * 80)),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
-          offset: Offset(0, 100 * value),
+          offset: Offset(0, 60 * value),
           child: Opacity(
             opacity: 1 - value,
             child: child,
@@ -299,90 +284,89 @@ class _ClinicsItemState extends State<ClinicsItem>
   }
 
   Widget _buildClinicCard(ClinicsEntity clinic) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Действие при нажатии на клинику
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // Navigation logic
+        },
+        borderRadius: BorderRadius.circular(18),
+        splashColor: ColorConstants.primaryColor.withOpacity(0.1),
+        highlightColor: ColorConstants.primaryColor.withOpacity(0.05),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: ColorConstants.borderColor.withOpacity(0.2),
+              width: 1,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  _buildClinicLogo(clinic),
-                  16.w,
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          clinic.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: ColorConstants.textColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                spreadRadius: -2,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6,
+                spreadRadius: -1,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                _buildClinicLogo(clinic),
+                16.w,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        clinic.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: ColorConstants.textColor,
+                          height: 1.2,
                         ),
-                        6.h,
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: ColorConstants.primaryColor
-                                    .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.medical_services_outlined,
-                                    size: 12,
-                                    color: ColorConstants.primaryColor,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Медцентр',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                      color: ColorConstants.primaryColor,
-                                    ),
-                                  ),
-                                ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      6.h,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: ColorConstants.secondaryTextColor,
+                          ),
+                          4.w,
+                          Expanded(
+                            child: Text(
+                              clinic.address,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: ColorConstants.secondaryTextColor,
+                                height: 1.2,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 16,
-                    color: ColorConstants.primaryColor,
-                  ),
-                ],
-              ),
+                ),
+                12.w,
+                _buildArrowIcon(),
+              ],
             ),
           ),
         ),
@@ -390,38 +374,72 @@ class _ClinicsItemState extends State<ClinicsItem>
     );
   }
 
-  Widget _buildClinicLogo(ClinicsEntity clinic) {
-    // Extract first letter from clinic name
-    final firstLetter = clinic.name.isNotEmpty ? clinic.name[0] : 'C';
-
+  Widget _buildArrowIcon() {
     return Container(
-      width: 60,
-      height: 60,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ColorConstants.secondaryColor,
-            ColorConstants.secondaryColor.withOpacity(0.7),
+        color: ColorConstants.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 14,
+        color: ColorConstants.primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildClinicLogo(ClinicsEntity clinic) {
+    return Hero(
+      tag: 'clinic_logo_${clinic.id}',
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: -1,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              spreadRadius: -1,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: ColorConstants.secondaryColor.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          firstLetter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            children: [
+              // Asosiy rasm
+              Positioned.fill(
+                child: Image.asset(
+                  "assets/images/clinc.png",
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                      ],
+                      stops: const [0.6, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

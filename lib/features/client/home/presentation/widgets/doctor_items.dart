@@ -1,13 +1,11 @@
-import 'dart:io';
-
-import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:clinic/features/client/home/presentation/widgets/home_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:clinic/features/client/home/presentation/bloc/doctor/doctor_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class DoctorItems extends StatefulWidget {
   const DoctorItems({super.key});
@@ -18,8 +16,9 @@ class DoctorItems extends StatefulWidget {
 
 class _DoctorItemsState extends State<DoctorItems>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -29,16 +28,29 @@ class _DoctorItemsState extends State<DoctorItems>
   }
 
   void _initAnimations() {
-    _controller = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
     );
 
-    _controller.forward();
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.elasticOut),
+      ),
+    );
+
+    _animationController.forward();
   }
 
   void _loadDoctors() {
@@ -47,7 +59,7 @@ class _DoctorItemsState extends State<DoctorItems>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -55,67 +67,46 @@ class _DoctorItemsState extends State<DoctorItems>
   Widget build(BuildContext context) {
     return BlocBuilder<DoctorBloc, DoctorState>(
       builder: (context, state) {
-        if (state is DoctorLoading) {
-          return _buildLoadingState();
-        } else if (state is DoctorLoaded) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: _buildLoadedState(state.doctors),
-          );
-        } else if (state is DoctorError) {
-          return _buildErrorState(state.message);
-        }
-        return const SizedBox.shrink();
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: _buildStateWidget(state),
+        );
       },
     );
   }
 
-  Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 40,
-            width: 40,
-            child: Platform.isIOS
-                ? CupertinoActivityIndicator(
-                    animating: true,
-                    color: ColorConstants.primaryColor,
-                  )
-                : CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        ColorConstants.primaryColor.withOpacity(0.8)),
-                  ),
-          ),
-          16.h,
-          const Text(
-            'Загрузка специалистов...',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: ColorConstants.secondaryTextColor,
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget _buildStateWidget(DoctorState state) {
+    if (state is DoctorLoading) {
+      return HomeLoading(
+        text: 'Загрузка специалистов...',
+      );
+    } else if (state is DoctorLoaded) {
+      return SlideTransition(
+        position: _slideAnimation,
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: _buildLoadedState(state.doctors),
+        ),
+      );
+    } else if (state is DoctorError) {
+      return _buildErrorState(state.message);
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildErrorState(String message) {
     return Container(
       margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 15,
-            spreadRadius: 1,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            spreadRadius: -2,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -123,12 +114,12 @@ class _DoctorItemsState extends State<DoctorItems>
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildErrorIcon(),
-          16.h,
-          const Text(
+          20.h,
+          Text(
             'Не удалось загрузить данные',
             style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
               color: ColorConstants.textColor,
             ),
           ),
@@ -136,12 +127,13 @@ class _DoctorItemsState extends State<DoctorItems>
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: 14,
               color: ColorConstants.secondaryTextColor,
+              height: 1.4,
             ),
           ),
-          20.h,
+          24.h,
           _buildRetryButton(),
         ],
       ),
@@ -150,16 +142,23 @@ class _DoctorItemsState extends State<DoctorItems>
 
   Widget _buildErrorIcon() {
     return Container(
-      width: 56,
-      height: 56,
+      width: 72,
+      height: 72,
       decoration: BoxDecoration(
-        color: ColorConstants.errorColor.withOpacity(0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorConstants.errorColor.withOpacity(0.15),
+            ColorConstants.errorColor.withOpacity(0.05),
+          ],
+        ),
         shape: BoxShape.circle,
       ),
       child: Icon(
-        Icons.error_outline_rounded,
+        Icons.person_outline_rounded,
         color: ColorConstants.errorColor,
-        size: 28,
+        size: 32,
       ),
     );
   }
@@ -169,42 +168,40 @@ class _DoctorItemsState extends State<DoctorItems>
       color: Colors.transparent,
       child: InkWell(
         onTap: _loadDoctors,
-        borderRadius: BorderRadius.circular(10),
-        child: Ink(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
           decoration: BoxDecoration(
             gradient: ColorConstants.primaryGradient,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: ColorConstants.primaryColor.withOpacity(0.3),
-                blurRadius: 10,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
+                color: ColorConstants.primaryColor.withOpacity(0.4),
+                blurRadius: 12,
+                spreadRadius: -3,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.refresh_rounded,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.refresh_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              8.w,
+              Text(
+                'Повторить',
+                style: TextStyle(
                   color: Colors.white,
-                  size: 16,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  'Повторить',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -216,10 +213,12 @@ class _DoctorItemsState extends State<DoctorItems>
       return _buildEmptyState();
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: doctors.length,
+      shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      separatorBuilder: (context, index) => 12.h,
       itemBuilder: (context, index) {
         final doctor = doctors[index];
         return _buildAnimatedDoctorCard(doctor, index);
@@ -228,57 +227,60 @@ class _DoctorItemsState extends State<DoctorItems>
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              spreadRadius: 0,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: ColorConstants.borderColor.withOpacity(0.3),
+          width: 1,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.teal.withOpacity(0.1),
-                shape: BoxShape.circle,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  ColorConstants.primaryColor.withOpacity(0.15),
+                  ColorConstants.primaryColor.withOpacity(0.05),
+                ],
               ),
-              child: Icon(
-                Icons.search_off_rounded,
-                size: 28,
-                color: Colors.teal,
-              ),
+              shape: BoxShape.circle,
             ),
-            16.h,
-            const Text(
-              'Специалисты не найдены',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: ColorConstants.textColor,
-              ),
+            child: Icon(
+              Icons.search_off_rounded,
+              size: 36,
+              color: ColorConstants.primaryColor,
             ),
-            8.h,
-            const Text(
-              'Попробуйте изменить критерии поиска',
-              style: TextStyle(
-                fontSize: 12,
-                color: ColorConstants.secondaryTextColor,
-              ),
-              textAlign: TextAlign.center,
+          ),
+          20.h,
+          Text(
+            'Специалисты не найдены',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: ColorConstants.textColor,
             ),
-          ],
-        ),
+          ),
+          8.h,
+          Text(
+            'Попробуйте изменить критерии поиска',
+            style: TextStyle(
+              fontSize: 14,
+              color: ColorConstants.secondaryTextColor,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -286,11 +288,11 @@ class _DoctorItemsState extends State<DoctorItems>
   Widget _buildAnimatedDoctorCard(DoctorEntity doctor, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 1.0, end: 0.0),
-      duration: Duration(milliseconds: 500 + (index * 100)),
+      duration: Duration(milliseconds: 400 + (index * 80)),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
         return Transform.translate(
-          offset: Offset(0, 100 * value),
+          offset: Offset(0, 60 * value),
           child: Opacity(
             opacity: 1 - value,
             child: child,
@@ -302,30 +304,93 @@ class _DoctorItemsState extends State<DoctorItems>
   }
 
   Widget _buildDoctorCard(DoctorEntity doctor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            // Действие при нажатии на врача
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          context.push(
+            '/doctor/${doctor.id}',
+            extra: {
+              'doctor': doctor,
+            },
+          );
+        },
+        borderRadius: BorderRadius.circular(18),
+        splashColor: ColorConstants.primaryColor.withOpacity(0.1),
+        highlightColor: ColorConstants.primaryColor.withOpacity(0.05),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: ColorConstants.borderColor.withOpacity(0.2),
+              width: 1,
             ),
-            child: Column(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                spreadRadius: -2,
+                offset: const Offset(0, 4),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6,
+                spreadRadius: -1,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                _buildDoctorCardContent(doctor),
+                _buildDoctorAvatar(doctor),
+                16.w,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doctor.fullName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: ColorConstants.textColor,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      6.h,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.medical_services_outlined,
+                            size: 14,
+                            color: ColorConstants.secondaryTextColor,
+                          ),
+                          4.w,
+                          Expanded(
+                            child: Text(
+                              doctor.specialization,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: ColorConstants.secondaryTextColor,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                12.w,
+                _buildArrowIcon(),
               ],
             ),
           ),
@@ -334,85 +399,38 @@ class _DoctorItemsState extends State<DoctorItems>
     );
   }
 
-  Widget _buildDoctorCardContent(DoctorEntity doctor) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildDoctorAvatar(doctor),
-          12.w,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDoctorName(doctor),
-                10.h,
-                _buildDoctorDescription(doctor),
-              ],
-            ),
-          ),
-        ],
+  Widget _buildArrowIcon() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: ColorConstants.primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 14,
+        color: ColorConstants.primaryColor,
       ),
     );
   }
 
   Widget _buildDoctorAvatar(DoctorEntity doctor) {
-    return Stack(
-      children: [
-        CustomCachedImage(
-          imageUrl: doctor.avatar,
-          width: 70,
-          height: 70,
-          type: CustomImageType.circle,
-          backgroundColor: ColorConstants.primaryColor.withOpacity(0.2),
-          fit: BoxFit.cover,
-        ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(8),
-                bottomRight: Radius.circular(14),
-              ),
-            ),
-            child: Icon(
-              Icons.medical_services_rounded,
-              size: 14,
-              color: ColorConstants.primaryColor,
+    return Hero(
+      tag: 'clinic_logo_${doctor.id}',
+      child: SizedBox(
+        width: 64,
+        height: 64,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Positioned.fill(
+            child: Image.asset(
+              "assets/images/doctor.jpg",
+              fit: BoxFit.cover,
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildDoctorName(DoctorEntity doctor) {
-    return Text(
-      doctor.fullName,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: ColorConstants.textColor,
       ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-
-  Widget _buildDoctorDescription(DoctorEntity doctor) {
-    return Text(
-      doctor.specialization,
-      style: TextStyle(
-        fontSize: 11,
-        color: Colors.grey[600],
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
     );
   }
 }

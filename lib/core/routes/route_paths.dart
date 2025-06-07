@@ -9,6 +9,7 @@ class RoutePaths {
   static const String appointmentsScreen = '/appointments';
   static const String chatScreen = '/chat';
   static const String chatDetail = '/chat/:chatId';
+  static const String doctorDetail = '/doctor/:doctorId';
 
   // Doctor routes
   static const String doctorLogin = '/doctor-login';

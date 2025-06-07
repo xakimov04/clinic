@@ -181,7 +181,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     _messageStreams.clear();
   }
 
-  // Ma'lum bir chat stream'ini yopish
+
   void closeStream(int chatId) {
     _pollingTimers[chatId]?.cancel();
     _pollingTimers.remove(chatId);

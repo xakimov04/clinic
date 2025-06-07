@@ -465,20 +465,6 @@ class _ChatListItem extends StatelessWidget {
         ),
 
         // Online indicator
-        if (chat.isActive)
-          Positioned(
-            bottom: 2,
-            right: 2,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: ColorConstants.successColor,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -488,7 +474,7 @@ class _ChatListItem extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Др. ${chat.doctorName}',
+            chat.doctorName,
             style: TextStyle(
               fontSize: 16,
               fontWeight:

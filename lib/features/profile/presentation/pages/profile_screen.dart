@@ -24,7 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToDetails(ProfileEntities user) {
-    // Go Router orqali navigation
     context.push(
       RoutePaths.profileDetailsScreen,
       extra: {'user': user},

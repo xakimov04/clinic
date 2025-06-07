@@ -34,18 +34,10 @@ class CategoryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Icon with subtle background
-                  Container(
+                  SizedBox(
                     width: 50,
                     height: 50,
-                    decoration: BoxDecoration(
-                      color: ColorConstants.primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.healing_rounded,
-                      color: ColorConstants.primaryColor,
-                      size: 26,
-                    ),
+                    child: Image.asset("assets/images/illness.png"),
                   ),
 
                   8.h,

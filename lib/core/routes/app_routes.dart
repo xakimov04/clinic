@@ -3,6 +3,8 @@ import 'package:clinic/core/routes/routes.dart';
 import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
 import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart';
 import 'package:clinic/features/client/chat/presentation/pages/chat_detail_screen.dart';
+import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
+import 'package:clinic/features/client/home/presentation/pages/doctor_detail_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_detail_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_screen.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
@@ -98,6 +100,25 @@ class AppRouter {
             );
           },
         ),
+        GoRoute(
+          path: RoutePaths.doctorDetail,
+          builder: (context, state) {
+            // Extra ma'lumotlardan doctor entity'ni olish
+            final extra = state.extra as Map<String, dynamic>?;
+            final doctor = extra?['doctor'] as DoctorEntity?;
+
+            if (doctor == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('Врач не найден'),
+                ),
+              );
+            }
+
+            return DoctorDetailScreen(doctor: doctor);
+          },
+        ),
+
         // Profile Details Screen (Global - ikkala role uchun)
         GoRoute(
           path: RoutePaths.profileDetailsScreen,
