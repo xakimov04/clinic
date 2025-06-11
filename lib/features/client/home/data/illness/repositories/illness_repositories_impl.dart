@@ -19,4 +19,13 @@ class IllnessRepositoriesImpl implements IllnessRepository {
       (illnessModel) => Right(illnessModel),
     );
   }
+
+  @override
+  Future<Either<Failure, IllnessEntities>> getIllnessDetails(int id) async {
+    final result = await remoteDataSource.getIllnessDetails(id);
+    return result.fold(
+      (failure) => Left(failure),
+      (illnessModel) => Right(illnessModel),
+    );
+  }
 }

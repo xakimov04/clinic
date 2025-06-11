@@ -1,17 +1,17 @@
 part of 'illness_bloc.dart';
 
-sealed class IllnessState extends Equatable {
+abstract class IllnessState extends Equatable {
   const IllnessState();
 
   @override
   List<Object> get props => [];
 }
 
-final class IllnessInitial extends IllnessState {}
+class IllnessInitial extends IllnessState {}
 
-final class IllnessLoading extends IllnessState {}
+class IllnessLoading extends IllnessState {}
 
-final class IllnessLoaded extends IllnessState {
+class IllnessLoaded extends IllnessState {
   final List<IllnessEntities> illnesses;
 
   const IllnessLoaded(this.illnesses);
@@ -20,7 +20,16 @@ final class IllnessLoaded extends IllnessState {
   List<Object> get props => [illnesses];
 }
 
-final class IllnessError extends IllnessState {
+class IllnessEmpty extends IllnessState {
+  final String message;
+
+  const IllnessEmpty(this.message);
+
+  @override
+  List<Object> get props => [message];
+}
+
+class IllnessError extends IllnessState {
   final String message;
 
   const IllnessError(this.message);
@@ -29,10 +38,21 @@ final class IllnessError extends IllnessState {
   List<Object> get props => [message];
 }
 
-final class IllnessEmpty extends IllnessState {
+class IllnessDetailsLoading extends IllnessState {}
+
+class IllnessDetailsLoaded extends IllnessState {
+  final IllnessEntities illness;
+
+  const IllnessDetailsLoaded(this.illness);
+
+  @override
+  List<Object> get props => [illness];
+}
+
+class IllnessDetailsError extends IllnessState {
   final String message;
 
-  const IllnessEmpty(this.message);
+  const IllnessDetailsError(this.message);
 
   @override
   List<Object> get props => [message];

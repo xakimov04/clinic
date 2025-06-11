@@ -79,9 +79,10 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
     // Yuborish holatini ko'rsatish
     emit(currentState.copyWith(isSendingMessage: true));
 
+    
     // Optimistic update - darhol UI'ga qo'shish
     final tempMessage = MessageEntity(
-      id: -DateTime.now().millisecondsSinceEpoch, // Vaqtinchalik ID
+      id: -DateTime.now().millisecondsSinceEpoch, 
       content: event.content,
       timestamp: DateTime.now(),
       isRead: true,

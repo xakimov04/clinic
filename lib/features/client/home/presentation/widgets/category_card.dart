@@ -1,7 +1,11 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/features/client/home/domain/illness/entities/illness_entities.dart';
+import 'package:clinic/features/client/home/presentation/bloc/illness/illness_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class CategoryCard extends StatelessWidget {
   final IllnessEntities illness;
@@ -82,7 +86,14 @@ class CategoryCard extends StatelessWidget {
                 splashColor: ColorConstants.primaryColor.withOpacity(0.1),
                 highlightColor: ColorConstants.primaryColor.withOpacity(0.05),
                 onTap: () {
-                  // Card bosilgandagi amal
+                  context
+                      .read<IllnessBloc>()
+                      .add(IllnessGetDetails(illness.id));
+                  context.push(
+                    RoutePaths.illnessDetail
+                        .replaceAll(':illnessId', illness.id.toString()),
+                    extra: {'illness': illness},
+                  );
                 },
               ),
             ),

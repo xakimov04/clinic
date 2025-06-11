@@ -423,11 +423,9 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen>
         height: 80,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Positioned.fill(
-            child: Image.asset(
-              "assets/images/doctor.jpg",
-              fit: BoxFit.cover,
-            ),
+          child: Image.asset(
+            "assets/images/doctor.jpg",
+            fit: BoxFit.cover,
           ),
         ),
       ),

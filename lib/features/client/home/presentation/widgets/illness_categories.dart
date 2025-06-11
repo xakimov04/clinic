@@ -75,6 +75,13 @@ class _IllnessCategoriesState extends State<IllnessCategories>
         ),
         16.h,
         BlocBuilder<IllnessBloc, IllnessState>(
+           buildWhen: (previous, current) {
+            return current is IllnessLoading ||
+                   current is IllnessLoaded ||
+                   current is IllnessEmpty ||
+                   current is IllnessError ||
+                   current is IllnessInitial;
+          },
           builder: (context, state) {
             if (state is IllnessError) {
               return SizedBox();

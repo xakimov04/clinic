@@ -5,6 +5,7 @@ import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_d
 import 'package:clinic/features/client/chat/presentation/pages/chat_detail_screen.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:clinic/features/client/home/presentation/pages/doctor_detail_screen.dart';
+import 'package:clinic/features/client/home/presentation/pages/illness_details_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_detail_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_screen.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
@@ -49,6 +50,27 @@ class AppRouter {
         GoRoute(
           path: RoutePaths.doctorLogin,
           builder: (context, state) => const DoctorLoginScreen(),
+        ),
+        GoRoute(
+          path: RoutePaths.illnessDetail,
+          builder: (context, state) {
+            final illnessIdStr = state.pathParameters['illnessId']!;
+            int.parse(illnessIdStr);
+
+            // Extra ma'lumotlardan illness entity'ni olish
+            final extra = state.extra as Map<String, dynamic>?;
+            final illness = extra?['illness'] ;
+
+            if (illness == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('Kasallik topilmadi'),
+                ),
+              );
+            }
+
+            return IllnessDetailsScreen(illness: illness);
+          },
         ),
         GoRoute(
           path: RoutePaths.chatDetail,

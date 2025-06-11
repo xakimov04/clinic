@@ -110,7 +110,6 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     final result = await getMessages(chatId);
     result.fold(
       (failure) {
-        // Xatolikni log qilish, lekin stream'ni to'xtatmaslik
       },
       (messages) {
         if (!_messageStreams[chatId]!.isClosed) {

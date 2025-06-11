@@ -4,4 +4,5 @@ import 'package:clinic/features/client/home/domain/illness/entities/illness_enti
 
 abstract class IllnessRepository {
   Future<Either<Failure, List<IllnessEntities>>> getAllIllnesses();
+  Future<Either<Failure, IllnessEntities>> getIllnessDetails(int id);
 }
