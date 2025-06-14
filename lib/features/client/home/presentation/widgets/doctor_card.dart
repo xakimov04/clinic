@@ -57,7 +57,7 @@ class DoctorCard extends StatelessWidget {
             child: Row(
               children: [
                 Hero(
-                  tag: 'clinic_logo_${doctor.id}',
+                  tag: 'doctor_screen_${doctor.hashCode}',
                   child: SizedBox(
                     width: 64,
                     height: 64,

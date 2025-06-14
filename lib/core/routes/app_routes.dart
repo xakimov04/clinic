@@ -1,13 +1,16 @@
-// lib/core/routes/app_routes.dart
 import 'package:clinic/core/routes/routes.dart';
+import 'package:clinic/features/client/appointments/data/models/appointment_model.dart';
 import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
 import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart';
 import 'package:clinic/features/client/chat/presentation/pages/chat_detail_screen.dart';
+import 'package:clinic/features/client/home/domain/clinics/entities/clinics_entity.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
+import 'package:clinic/features/client/home/presentation/pages/clinic_details_screen.dart';
 import 'package:clinic/features/client/home/presentation/pages/doctor_detail_screen.dart';
 import 'package:clinic/features/client/home/presentation/pages/illness_details_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_detail_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_screen.dart';
+import 'package:clinic/features/doctor/home/presentation/pages/appointment_detail_screen.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
 import 'package:clinic/features/doctor/main/pages/doctor_main_screen.dart';
 import 'package:clinic/features/profile/presentation/pages/profile_details_screen.dart';
@@ -59,7 +62,7 @@ class AppRouter {
 
             // Extra ma'lumotlardan illness entity'ni olish
             final extra = state.extra as Map<String, dynamic>?;
-            final illness = extra?['illness'] ;
+            final illness = extra?['illness'];
 
             if (illness == null) {
               return const Scaffold(
@@ -141,6 +144,25 @@ class AppRouter {
           },
         ),
 
+        // Clinic Details Screen
+        GoRoute(
+          path: '/clinic/:clinicId',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final clinic = extra?['clinic'] as ClinicsEntity?;
+
+            if (clinic == null) {
+              return const Scaffold(
+                body: Center(
+                  child: Text('Klinika topilmadi'),
+                ),
+              );
+            }
+
+            return ClinicDetailsScreen(clinic: clinic);
+          },
+        ),
+
         // Profile Details Screen (Global - ikkala role uchun)
         GoRoute(
           path: RoutePaths.profileDetailsScreen,
@@ -193,8 +215,8 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: RoutePaths.appointmentsScreen,
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                    child: AppointmentsScreen(),
+                  pageBuilder: (context, state) => NoTransitionPage(
+                    child: AppointmentsScreen(repository: sl()),
                   ),
                 ),
               ],
@@ -227,7 +249,17 @@ class AppRouter {
             ),
           ],
         ),
-
+        GoRoute(
+          path: RoutePaths.appointmentDetailScreen,
+          pageBuilder: (context, state) {
+            final appointment = state.extra as Map<String, dynamic>?;
+            final appointments =
+                appointment?['appointment'] as AppointmentModel;
+            return NoTransitionPage(
+              child: AppointmentDetailScreen(appointment: appointments),
+            );
+          },
+        ),
         // Doctor main screen
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) {
@@ -240,8 +272,10 @@ class AppRouter {
               routes: [
                 GoRoute(
                   path: RoutePaths.doctorHome,
-                  pageBuilder: (context, state) => const NoTransitionPage(
-                    child: DoctorHomeScreen(),
+                  pageBuilder: (context, state) => NoTransitionPage(
+                    child: DoctorHomeScreen(
+                      repository: sl(),
+                    ),
                   ),
                 ),
               ],

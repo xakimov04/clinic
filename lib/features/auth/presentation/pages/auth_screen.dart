@@ -10,9 +10,8 @@ import 'package:clinic/features/auth/domain/entities/verify_otp_entity.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_event.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_state.dart';
+import 'package:clinic/features/auth/presentation/widgets/input_formatter.dart';
 import 'package:clinic/features/auth/presentation/widgets/otp_input_widget.dart';
-import 'package:clinic/features/auth/presentation/widgets/uzbek_phone_input_formatter.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -69,8 +68,7 @@ class _AuthScreenState extends State<AuthScreen>
 
     final digitsCount = value.replaceAll(RegExp(r'\D'), '').length;
 
-    // O'zbekiston uchun 12 raqam (998 + 9 raqam)
-    if (digitsCount < 12) {
+    if (digitsCount < 11) {
       return 'Введите полный номер телефона';
     }
 
@@ -352,7 +350,7 @@ class _AuthScreenState extends State<AuthScreen>
               color: ColorConstants.primaryColor,
             ),
             inputFormatters: [
-              UzbekPhoneInputFormatter(),
+              RussianPhoneInputFormatter(),
             ],
             validator: _validatePhone,
             onSubmitted: (_) => _requestCode(),

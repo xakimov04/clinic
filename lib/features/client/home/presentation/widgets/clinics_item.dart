@@ -5,6 +5,8 @@ import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/features/client/home/domain/clinics/entities/clinics_entity.dart';
 import 'package:clinic/features/client/home/presentation/bloc/clinics/clinics_bloc.dart';
+import 'package:clinic/features/client/home/presentation/bloc/clinics_doctor/clinics_doctors_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class ClinicsItem extends StatefulWidget {
   const ClinicsItem({super.key});
@@ -288,7 +290,13 @@ class _ClinicsItemState extends State<ClinicsItem>
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // Navigation logic
+          context
+              .read<ClinicsDoctorsBloc>()
+              .add(GetClinicDoctorsEvent(clinic.id));
+          context.push(
+            '/clinic/${clinic.id}',
+            extra: {'clinic': clinic},
+          );
         },
         borderRadius: BorderRadius.circular(18),
         splashColor: ColorConstants.primaryColor.withOpacity(0.1),

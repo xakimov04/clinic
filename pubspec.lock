@@ -222,6 +222,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.1"
+  flutter_cupertino_date_picker_fork:
+    dependency: "direct main"
+    description:
+      name: flutter_cupertino_date_picker_fork
+      sha256: edc20d4045a7cb8c75503a73b103ba30d52e1a2c7bc1bff5b4f39dc356b67ee8
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.7"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -265,7 +273,7 @@ packages:
     source: hosted
     version: "15.1.1"
   http:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http
       sha256: "2c11f3f94c687ee9bad77c171151672986360b2b001d109814ee7140b2cf261b"

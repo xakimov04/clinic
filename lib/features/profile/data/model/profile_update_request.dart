@@ -38,7 +38,7 @@ class ProfileUpdateRequest {
     // Date of birth
     if (originalProfile.dateOfBirth != updatedProfile.dateOfBirth) {
       if (updatedProfile.dateOfBirth != null) {
-        _changedFields['date_of_birth'] = updatedProfile.dateOfBirth!.toIso8601String();
+        _changedFields['date_of_birth'] = updatedProfile.dateOfBirth;
       } else {
         _changedFields['date_of_birth'] = null;
       }

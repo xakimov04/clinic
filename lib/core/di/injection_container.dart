@@ -1,18 +1,18 @@
-
-
+import 'package:clinic/core/di/modules/appointment_module.dart';
+import 'package:clinic/core/di/modules/news_module.dart';
 
 import 'export/di_export.dart';
 
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  //NOTE: Core modullarni ro'yxatga olish
   await registerCoreModule();
 
-  //NOTE: Feature modullarni ro'yxatga olish
   await registerAuthModule();
   await registerProfileModule();
   await registerHomeModule();
   await registerChatModule();
   await registerMessageModule();
+  await registerAppointmentModule();
+  await registerNewsModule();
 }

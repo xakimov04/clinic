@@ -38,8 +38,8 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
       return ProfileModel.fromJson(data);
     } catch (e) {
-      throw ServerException(
-          message: 'Ошибка обновления информации профиля');
+      print(e);
+      throw ServerException(message: 'Ошибка обновления информации профиля');
     }
   }
 

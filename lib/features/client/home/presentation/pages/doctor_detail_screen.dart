@@ -1,5 +1,6 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/features/client/appointments/presentation/pages/appointment_booking_screen.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -412,12 +413,17 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen>
 
   void _makeAppointment() {
     HapticFeedback.lightImpact();
-    // Appointment booking
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AppointmentBookingScreen(doctor: widget.doctor),
+      ),
+    );
   }
 
   Widget _buildDoctorAvatar(DoctorEntity doctor) {
     return Hero(
-      tag: 'clinic_logo_${doctor.id}',
+      tag: 'doctor_screen_${doctor.hashCode}',
       child: SizedBox(
         width: 80,
         height: 80,

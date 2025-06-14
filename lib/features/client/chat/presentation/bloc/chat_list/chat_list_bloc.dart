@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:clinic/core/usecase/usecase.dart';
 import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
-import 'package:clinic/features/client/chat/domain/repositories/chat_repository.dart';
+import 'package:clinic/features/client/chat/domain/usecases/create_chat_usecase.dart';
 import 'package:clinic/features/client/chat/domain/usecases/get_chats_usecase.dart';
 import 'package:equatable/equatable.dart';
 
@@ -10,15 +10,15 @@ part 'chat_list_state.dart';
 
 class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
   final GetChatsUsecase getChatsUsecase;
-  final ChatRepository chatRepository;
-
+  final CreateChatUsecase createChatUsecase;
   ChatListBloc({
     required this.getChatsUsecase,
-    required this.chatRepository,
+    required this.createChatUsecase,
   }) : super(ChatListInitial()) {
     on<GetChatsListEvent>(_onGetChatsList);
     on<RefreshChatsListEvent>(_onRefreshChatsList);
     on<MarkChatAsReadEvent>(_onMarkChatAsRead);
+    on<CreateChatEvent>(_onCreateChat);
   }
 
   Future<void> _onGetChatsList(
@@ -91,5 +91,30 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     }).toList();
 
     emit(ChatListLoaded(updatedChats));
+  }
+
+  Future<void> _onCreateChat(
+    CreateChatEvent event,
+    Emitter<ChatListState> emit,
+  ) async {
+    if (state is ChatListLoaded) {
+      emit(ChatCreating((state as ChatListLoaded).chats));
+    }
+
+    final result = await createChatUsecase(event.patientId.toString());
+
+    result.fold(
+      (failure) => emit(ChatListError(failure.message)),
+      (_) async {
+        // After creating chat, refresh the chat list
+        final chatsResult = await getChatsUsecase(NoParams());
+        if (!emit.isDone) {
+          chatsResult.fold(
+            (failure) => emit(ChatListError(failure.message)),
+            (chats) => emit(ChatListLoaded(chats)),
+          );
+        }
+      },
+    );
   }
 }

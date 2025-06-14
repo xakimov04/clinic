@@ -5,6 +5,7 @@ import 'package:clinic/features/client/chat/data/models/chat_model.dart';
 
 abstract class ChatRemoteDataSource {
   Future<Either<Failure, List<ChatModel>>> getChats();
+  Future<Either<Failure, void>> createChats(String patientId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -25,6 +26,19 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       chats.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
 
       return Right(chats);
+    } catch (e) {
+      return Left(
+          ServerFailure(message: 'Чаты загрузить не удалось: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> createChats(String patientId) async {
+    try {
+      await networkManager
+          .postData(url: 'chats/create/', data: {"patient_id": patientId});
+
+      return Right(null);
     } catch (e) {
       return Left(
           ServerFailure(message: 'Чаты загрузить не удалось: ${e.toString()}'));

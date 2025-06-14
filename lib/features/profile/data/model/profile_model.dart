@@ -1,8 +1,12 @@
 // lib/features/profile/data/model/profile_model.dart
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'profile_update_request.dart';
+import 'package:intl/intl.dart';
 
 class ProfileModel extends ProfileEntities {
+  // ISO 8601 date format uchun static formatter
+  static final DateFormat _isoDateFormat = DateFormat('yyyy-MM-dd');
+
   const ProfileModel({
     required super.id,
     required super.username,
@@ -29,7 +33,7 @@ class ProfileModel extends ProfileEntities {
       email: json['email'],
       phoneNumber: json['phone_number'],
       dateOfBirth: json['date_of_birth'] != null
-          ? DateTime.parse(json['date_of_birth'])
+          ? _parseServerDate(json['date_of_birth'])
           : null,
       gender: json['gender'],
       verified: json['verified'] ?? false,
@@ -43,6 +47,40 @@ class ProfileModel extends ProfileEntities {
       isAvailable: json['is_available'],
       medicalLicense: json['medical_license'],
     );
+  }
+
+  /// Server formatini DateTime ga parse qilish
+  /// Supports: "2000-06-21 00:00:00.000", "2000-06-21T00:00:00.000Z", "2000-06-21"
+  static DateTime? _parseServerDate(dynamic dateValue) {
+    if (dateValue == null) return null;
+
+    try {
+      if (dateValue is DateTime) return dateValue;
+
+      String dateString = dateValue.toString();
+
+      // Milliseconds va timezone info ni olib tashlash
+      String cleanDate = dateString
+          .replaceAll('.000', '')
+          .replaceAll('T', ' ')
+          .replaceAll('Z', '')
+          .trim();
+
+      // Agar faqat sana bo'lsa (yyyy-MM-dd)
+      if (cleanDate.length == 10) {
+        return DateTime.parse(cleanDate);
+      }
+
+      // Agar sana va vaqt bo'lsa (yyyy-MM-dd HH:mm:ss)
+      return DateTime.parse(cleanDate);
+    } catch (e) {
+      // Fallback - try standard DateTime.parse
+      try {
+        return DateTime.parse(dateValue.toString());
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   /// Entity dan Model yaratish uchun factory
@@ -107,13 +145,39 @@ class ProfileModel extends ProfileEntities {
       name: name ?? this.name,
       avatar: clearAvatar ? null : (avatar ?? this.avatar),
       fullName: fullName ?? this.fullName,
-      specialization: clearSpecialization ? null : (specialization ?? this.specialization),
+      specialization:
+          clearSpecialization ? null : (specialization ?? this.specialization),
       isAvailable: isAvailable ?? this.isAvailable,
-      medicalLicense: clearMedicalLicense ? null : (medicalLicense ?? this.medicalLicense),
+      medicalLicense:
+          clearMedicalLicense ? null : (medicalLicense ?? this.medicalLicense),
     );
   }
 
+  /// API ga yuborish uchun - ISO 8601 formatida
   Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'phone_number': phoneNumber,
+      'date_of_birth':
+          dateOfBirth != null ? _isoDateFormat.format(dateOfBirth!) : null,
+      'gender': gender,
+      'verified': verified,
+      'agreed_to_terms': agreedToTerms,
+      'biometric_enabled': biometricEnabled,
+      'user_type': userType,
+      'name': name,
+      'avatar': avatar,
+      'full_name': fullName,
+      'specialization': specialization,
+      'is_available': isAvailable,
+      'medical_license': medicalLicense,
+    };
+  }
+
+  /// Debug va logging uchun - full DateTime ma'lumoti bilan
+  Map<String, dynamic> toJsonWithFullDate() {
     return {
       'id': id,
       'username': username,
@@ -145,8 +209,13 @@ class ProfileModel extends ProfileEntities {
     );
   }
 
+  /// Date formatlarini tekshirish uchun getter
+  String? get isoFormattedDate {
+    return dateOfBirth != null ? _isoDateFormat.format(dateOfBirth!) : null;
+  }
+
   @override
   String toString() {
-    return 'ProfileModel(id: $id, name: $name, email: $email, userType: $userType)';
+    return 'ProfileModel(id: $id, name: $name, email: $email, userType: $userType, dateOfBirth: ${isoFormattedDate})';
   }
 }

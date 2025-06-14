@@ -17,4 +17,13 @@ class ChatRepositoryImpl implements ChatRepository {
       (chatModels) => Right(chatModels),
     );
   }
+
+  @override
+  Future<Either<Failure, void>> createChats(String patientId) async {
+    final result = await remoteDataSource.createChats(patientId);
+    return result.fold(
+      (failure) => Left(failure),
+      (chatModels) => Right(chatModels),
+    );
+  }
 }

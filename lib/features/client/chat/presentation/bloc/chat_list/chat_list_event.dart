@@ -15,6 +15,15 @@ final class RefreshChatsListEvent extends ChatListEvent {
   const RefreshChatsListEvent();
 }
 
+final class CreateChatEvent extends ChatListEvent {
+  final int patientId;
+
+  const CreateChatEvent(this.patientId);
+
+  @override
+  List<Object> get props => [patientId];
+}
+
 final class MarkChatAsReadEvent extends ChatListEvent {
   final int chatId;
 

@@ -4,4 +4,5 @@ import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
 
 abstract class ChatRepository {
   Future<Either<Failure, List<ChatEntity>>> getChats();
+  Future<Either<Failure, void>> createChats(String patientId);
 }

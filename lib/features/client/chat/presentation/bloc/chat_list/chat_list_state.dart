@@ -51,3 +51,21 @@ final class ChatListError extends ChatListState {
   @override
   List<Object> get props => [message];
 }
+
+final class ChatCreating extends ChatListState {
+  final List<ChatEntity> currentChats;
+
+  const ChatCreating(this.currentChats);
+
+  @override
+  List<Object> get props => [currentChats];
+}
+
+final class ChatCreated extends ChatListState {
+  final ChatEntity chat;
+
+  const ChatCreated(this.chat);
+
+  @override
+  List<Object> get props => [chat];
+}

@@ -1,4 +1,7 @@
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/di/injection_container.dart';
+import 'package:clinic/core/local/local_storage_service.dart';
+import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
@@ -20,14 +23,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+
     context.read<ProfileBloc>().add(GetProfileEvent());
   }
 
-  void _navigateToDetails(ProfileEntities user) {
-    context.push(
+  void _navigateToDetails(ProfileEntities user) async {
+    final result = await context.push<bool>(
       RoutePaths.profileDetailsScreen,
       extra: {'user': user},
     );
+
+    if (result == true) {
+      context.read<ProfileBloc>().add(GetProfileEvent());
+    }
   }
 
   @override
@@ -48,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (state is ProfileUpdateSuccess) {
           CustomSnackbar.showSuccess(
             context: context,
-            message: 'Profil muvaffaqiyatli yangilandi!',
+            message: 'Профиль успешно обновлен!',
           );
         }
       },
@@ -136,27 +144,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 20),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            user.email,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      child: FutureBuilder<String?>(
+                        future: sl<LocalStorageService>()
+                            .getString(StorageKeys.userRole),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator(); // yoki shunchaki bo'sh `SizedBox()`
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF333333),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                user.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                    ),
+                    )
                   ],
                 ),
               ),
@@ -187,20 +206,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     _buildDivider(),
                     _buildMenuItem(
-                      icon: Icons.settings_outlined,
-                      title: "Настройки",
-                      onTap: () {},
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: Icons.privacy_tip_outlined,
-                      title: "Политика приватности",
-                      onTap: () {},
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
                       icon: Icons.help_outline_rounded,
-                      title: "Помощь",
+                      title: "FAQ",
                       onTap: () {},
                     ),
                   ],

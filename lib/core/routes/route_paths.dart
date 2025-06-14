@@ -19,4 +19,5 @@ class RoutePaths {
   static const String doctorChat = '/doctor-chat'; // Yangi route
   static const String doctorChatDetail = '/doctor-chat/:chatId'; // Yangi route
   static const String doctorProfileDetails = '/doctor-profile/details';
+  static const String appointmentDetailScreen = '/doctor-home/appointment-detail';
 }
