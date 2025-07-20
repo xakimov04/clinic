@@ -20,7 +20,9 @@ class NewsRemoteDataSourceImpl implements NewsRemoteDataSource {
       final news = jsonList.map((json) => NewsModel.fromJson(json)).toList();
       return Right(news);
     } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
+      return Left(ServerFailure(
+          message:
+              'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.'));
     }
   }
 }

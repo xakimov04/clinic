@@ -11,6 +11,9 @@ part 'chat_list_state.dart';
 class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
   final GetChatsUsecase getChatsUsecase;
   final CreateChatUsecase createChatUsecase;
+
+  List<ChatEntity> _cachedChats = [];
+
   ChatListBloc({
     required this.getChatsUsecase,
     required this.createChatUsecase,
@@ -19,6 +22,25 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     on<RefreshChatsListEvent>(_onRefreshChatsList);
     on<MarkChatAsReadEvent>(_onMarkChatAsRead);
     on<CreateChatEvent>(_onCreateChat);
+    on<GetChatsListEventNotLoading>(_onGetChatsListEventNotLoading);
+  }
+  Future<void> _onGetChatsListEventNotLoading(
+    GetChatsListEventNotLoading event,
+    Emitter<ChatListState> emit,
+  ) async {
+    final result = await getChatsUsecase(NoParams());
+
+    result.fold(
+      (failure) => emit(ChatListError(failure.message)),
+      (chats) {
+        _cachedChats = chats;
+        if (chats.isEmpty) {
+          emit(const ChatListEmpty('У вас нет активных чатов'));
+        } else {
+          emit(ChatListLoaded(chats));
+        }
+      },
+    );
   }
 
   Future<void> _onGetChatsList(
@@ -32,6 +54,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     result.fold(
       (failure) => emit(ChatListError(failure.message)),
       (chats) {
+        _cachedChats = chats;
         if (chats.isEmpty) {
           emit(const ChatListEmpty('У вас нет активных чатов'));
         } else {
@@ -54,6 +77,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     result.fold(
       (failure) => emit(ChatListError(failure.message)),
       (chats) {
+        _cachedChats = chats;
         if (chats.isEmpty) {
           emit(const ChatListEmpty('У вас нет активных чатов'));
         } else {
@@ -90,6 +114,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
       return chat;
     }).toList();
 
+    _cachedChats = updatedChats;
     emit(ChatListLoaded(updatedChats));
   }
 
@@ -97,21 +122,39 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     CreateChatEvent event,
     Emitter<ChatListState> emit,
   ) async {
-    if (state is ChatListLoaded) {
-      emit(ChatCreating((state as ChatListLoaded).chats));
-    }
+    // Chat yaratish jarayonida hozirgi chatlarni saqlab qolamiz
+    final currentChats = _cachedChats;
+
+    emit(ChatCreating(currentChats));
 
     final result = await createChatUsecase(event.patientId.toString());
 
     result.fold(
-      (failure) => emit(ChatListError(failure.message)),
-      (_) async {
-        // After creating chat, refresh the chat list
+      (failure) {
+        // Xatolik bo'lsa, hozirgi chatlarni qaytaramiz
+        if (currentChats.isNotEmpty) {
+          emit(ChatListLoaded(currentChats));
+        } else {
+          emit(const ChatListEmpty('У вас нет активных чатов'));
+        }
+        // Keyin xatolikni ko'rsatamiz
+        Future.delayed(Duration.zero, () {
+          if (!emit.isDone) emit(ChatListError(failure.message));
+        });
+      },
+      (createdChat) async {
+        // Yangi chat yaratilgach darhol ChatCreatedSuccessfully emit qilamiz
+        emit(ChatCreatedSuccessfully(createdChat));
+
+        // Keyin chat list'ni yangilaymiz (background'da)
         final chatsResult = await getChatsUsecase(NoParams());
         if (!emit.isDone) {
           chatsResult.fold(
             (failure) => emit(ChatListError(failure.message)),
-            (chats) => emit(ChatListLoaded(chats)),
+            (chats) {
+              _cachedChats = chats;
+              emit(ChatListLoaded(chats));
+            },
           );
         }
       },

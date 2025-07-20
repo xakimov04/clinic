@@ -38,7 +38,7 @@ class AppointmentSuccessDialog extends StatelessWidget {
             ),
             24.h,
             const Text(
-              'Muvaffaqiyatli!',
+              'Успешно!',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -47,7 +47,7 @@ class AppointmentSuccessDialog extends StatelessWidget {
             ),
             8.h,
             const Text(
-              'Sizning qabulingiz muvaffaqiyatli yaratildi',
+              'Ваш приём успешно создан',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
@@ -64,25 +64,25 @@ class AppointmentSuccessDialog extends StatelessWidget {
               child: Column(
                 children: [
                   _buildInfoRow(
-                    'Shifokor',
-                    appointment.doctorName ?? 'Noma\'lum',
+                    'Врач',
+                    appointment.doctorName ?? 'Неизвестно',
                     Icons.person_outline,
                   ),
                   12.h,
                   _buildInfoRow(
-                    'Klinika',
-                    appointment.clinicName ?? 'Noma\'lum',
+                    'Клиника',
+                    appointment.clinicName ?? 'Неизвестно',
                     Icons.local_hospital_outlined,
                   ),
                   12.h,
                   _buildInfoRow(
-                    'Sana',
+                    'Дата',
                     DateFormat('dd MMMM yyyy', 'uz').format(appointment.date),
                     Icons.calendar_today_outlined,
                   ),
                   12.h,
                   _buildInfoRow(
-                    'Vaqt',
+                    'Время',
                     appointment.time,
                     Icons.access_time,
                   ),
@@ -96,7 +96,7 @@ class AppointmentSuccessDialog extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text(
-                      'Yopish',
+                      'Закрыть',
                       style: TextStyle(
                         color: ColorConstants.secondaryTextColor,
                       ),
@@ -117,7 +117,7 @@ class AppointmentSuccessDialog extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Qabullarim',
+                      'Мои приёмы',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

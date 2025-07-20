@@ -17,14 +17,9 @@ class ProfileUpdateRequest {
   /// O'zgarishlarni aniqlash va track qilish
   void _trackChanges() {
     // Name
-    if (originalProfile.name != updatedProfile.name) {
-      _changedFields['name'] = updatedProfile.name;
-    }
+    
 
-    // Full name
-    if (originalProfile.fullName != updatedProfile.fullName) {
-      _changedFields['full_name'] = updatedProfile.fullName;
-    }
+    
 
     // Phone number
     if (originalProfile.phoneNumber != updatedProfile.phoneNumber) {

@@ -59,10 +59,9 @@ class AuthRepositoriesImpl implements AuthRepository {
       (data) => Right(
         OtpResponseEntity(
           detail: data.detail,
-          token: data.token,
+          access: data.access,
           userId: data.userId,
-          userType: data.userType,
-          isNewUser: data.isNewUser,
+          refresh: data.refresh,
         ),
       ),
     );

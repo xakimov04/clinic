@@ -11,6 +11,8 @@ final class GetChatsListEvent extends ChatListEvent {
   const GetChatsListEvent();
 }
 
+final class GetChatsListEventNotLoading extends ChatListEvent {}
+
 final class RefreshChatsListEvent extends ChatListEvent {
   const RefreshChatsListEvent();
 }

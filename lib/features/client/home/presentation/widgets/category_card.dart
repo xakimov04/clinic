@@ -37,48 +37,34 @@ class CategoryCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Icon with subtle background
-                  SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: Image.asset("assets/images/illness.png"),
+                  Center(
+                    child: SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: Image.asset("assets/images/illness.png"),
+                    ),
                   ),
 
                   8.h,
 
                   // Illness name
                   Text(
-                    illness.name,
+                    illness.specialization,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: ColorConstants.textColor,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
 
                   4.h,
-
-                  // Description - 2 qatorli
-                  Text(
-                    illness.description,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w400,
-                      color: ColorConstants.secondaryTextColor,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
             ),
 
-            // Ripple effect for touch
             Material(
               color: Colors.transparent,
               child: InkWell(

@@ -18,34 +18,43 @@ class ProfileModel extends ProfileEntities {
     required super.agreedToTerms,
     required super.biometricEnabled,
     required super.userType,
-    required super.name,
     super.avatar,
-    required super.fullName,
     super.specialization,
     super.isAvailable,
     super.medicalLicense,
+    required super.firstName,
+    required super.lastName,
+    required super.middleName,
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    String getValidString(dynamic value, [String fallback = "Не указано"]) {
+      if (value == null || (value is String && value.trim().isEmpty)) {
+        return fallback;
+      }
+      return value.toString();
+    }
+
     return ProfileModel(
       id: json['id'],
-      username: json['username'],
-      email: json['email'],
-      phoneNumber: json['phone_number'],
+      username: getValidString(json['username']),
+      email: getValidString(json['email']),
+      phoneNumber: getValidString(json['phone_number'], ''),
       dateOfBirth: json['date_of_birth'] != null
           ? _parseServerDate(json['date_of_birth'])
           : null,
-      gender: json['gender'],
+      gender: getValidString(json['gender'], ''),
       verified: json['verified'] ?? false,
       agreedToTerms: json['agreed_to_terms'] ?? false,
       biometricEnabled: json['biometric_enabled'] ?? false,
-      userType: json['user_type'],
-      name: json['name'],
-      avatar: json['avatar'],
-      fullName: json['full_name'],
-      specialization: json['specialization'],
+      userType: getValidString(json['user_type']),
+      firstName: json['first_name'] ?? "",
+      lastName: json['last_name'] ?? "",
+      middleName: json['middle_name'] ?? "",
+      avatar: getValidString(json['avatar'], ''),
+      specialization: getValidString(json['specialization'], "Не указано"),
       isAvailable: json['is_available'],
-      medicalLicense: json['medical_license'],
+      medicalLicense: getValidString(json['medical_license'], "Не указано"),
     );
   }
 
@@ -96,16 +105,16 @@ class ProfileModel extends ProfileEntities {
       agreedToTerms: entity.agreedToTerms,
       biometricEnabled: entity.biometricEnabled,
       userType: entity.userType,
-      name: entity.name,
       avatar: entity.avatar,
-      fullName: entity.fullName,
       specialization: entity.specialization,
       isAvailable: entity.isAvailable,
       medicalLicense: entity.medicalLicense,
+      firstName: entity.firstName,
+      lastName: entity.lastName,
+      middleName: entity.middleName,
     );
   }
 
-  /// Ma'lumotlarni yangilash uchun copyWith metodi
   ProfileModel copyWith({
     int? id,
     String? username,
@@ -117,13 +126,14 @@ class ProfileModel extends ProfileEntities {
     bool? agreedToTerms,
     bool? biometricEnabled,
     String? userType,
-    String? name,
+    String? firstName,
+    String? lastName,
+    String? middleName,
     String? avatar,
     String? fullName,
     String? specialization,
     bool? isAvailable,
     String? medicalLicense,
-    // Null qiymatlarni o'rnatish uchun
     bool clearPhoneNumber = false,
     bool clearDateOfBirth = false,
     bool clearGender = false,
@@ -142,9 +152,10 @@ class ProfileModel extends ProfileEntities {
       agreedToTerms: agreedToTerms ?? this.agreedToTerms,
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       userType: userType ?? this.userType,
-      name: name ?? this.name,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      middleName: middleName ?? this.middleName,
       avatar: clearAvatar ? null : (avatar ?? this.avatar),
-      fullName: fullName ?? this.fullName,
       specialization:
           clearSpecialization ? null : (specialization ?? this.specialization),
       isAvailable: isAvailable ?? this.isAvailable,
@@ -153,45 +164,19 @@ class ProfileModel extends ProfileEntities {
     );
   }
 
-  /// API ga yuborish uchun - ISO 8601 formatida
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'username': username,
       'email': email,
       'phone_number': phoneNumber,
       'date_of_birth':
           dateOfBirth != null ? _isoDateFormat.format(dateOfBirth!) : null,
       'gender': gender,
-      'verified': verified,
       'agreed_to_terms': agreedToTerms,
       'biometric_enabled': biometricEnabled,
-      'user_type': userType,
-      'name': name,
-      'avatar': avatar,
-      'full_name': fullName,
-      'specialization': specialization,
-      'is_available': isAvailable,
-      'medical_license': medicalLicense,
-    };
-  }
-
-  /// Debug va logging uchun - full DateTime ma'lumoti bilan
-  Map<String, dynamic> toJsonWithFullDate() {
-    return {
-      'id': id,
-      'username': username,
-      'email': email,
-      'phone_number': phoneNumber,
-      'date_of_birth': dateOfBirth?.toIso8601String(),
-      'gender': gender,
-      'verified': verified,
-      'agreed_to_terms': agreedToTerms,
-      'biometric_enabled': biometricEnabled,
-      'user_type': userType,
-      'name': name,
-      'avatar': avatar,
-      'full_name': fullName,
+      'first_name': firstName,
+      'last_name': lastName,
+      'middle_name': middleName,
       'specialization': specialization,
       'is_available': isAvailable,
       'medical_license': medicalLicense,
@@ -212,10 +197,5 @@ class ProfileModel extends ProfileEntities {
   /// Date formatlarini tekshirish uchun getter
   String? get isoFormattedDate {
     return dateOfBirth != null ? _isoDateFormat.format(dateOfBirth!) : null;
-  }
-
-  @override
-  String toString() {
-    return 'ProfileModel(id: $id, name: $name, email: $email, userType: $userType, dateOfBirth: ${isoFormattedDate})';
   }
 }

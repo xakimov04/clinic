@@ -5,6 +5,9 @@ import 'package:clinic/features/client/appointments/domain/repositories/appointm
 import 'package:clinic/features/client/appointments/presentation/bloc/appointment_booking/appointment_booking_bloc.dart';
 import 'package:clinic/features/client/appointments/domain/usecases/create_appointment_usecase.dart';
 import 'package:clinic/features/client/appointments/domain/usecases/get_doctor_clinics_usecase.dart';
+import 'package:clinic/features/client/appointments/domain/usecases/get_appointment_usecase.dart';
+import 'package:clinic/features/client/appointments/domain/usecases/put_appointment_usecase.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_bloc.dart';
 
 Future<void> registerAppointmentModule() async {
   final sl = GetIt.instance;
@@ -16,7 +19,7 @@ Future<void> registerAppointmentModule() async {
 
   // Repositories
   sl.registerLazySingleton<AppointmentRepository>(
-    () => AppointmentRepositoryImpl(),
+    () => AppointmentRepositoryImpl(remoteDataSource: sl()),
   );
 
   // Use Cases
@@ -26,12 +29,27 @@ Future<void> registerAppointmentModule() async {
   sl.registerLazySingleton(
     () => CreateAppointmentUsecase(sl<AppointmentRepository>()),
   );
+  sl.registerLazySingleton(
+    () => PutAppointmentUsecase(sl<AppointmentRepository>()),
+  );
+  sl.registerLazySingleton(
+    () => GetAppointmentUsecase(sl<AppointmentRepository>()),
+  );
 
-  // BLoC
+  // BLoCs
   sl.registerFactory(
     () => AppointmentBookingBloc(
       getDoctorClinicsUsecase: sl<GetDoctorClinicsUsecase>(),
       createAppointmentUsecase: sl<CreateAppointmentUsecase>(),
+    ),
+  );
+
+  sl.registerFactory(
+    () => AppointmentBloc(
+      getDoctorClinicsUsecase: sl<GetDoctorClinicsUsecase>(),
+      createAppointmentUsecase: sl<CreateAppointmentUsecase>(),
+      putAppointmentUsecase: sl<PutAppointmentUsecase>(),
+      getAppointmentUsecase: sl<GetAppointmentUsecase>(),
     ),
   );
 }

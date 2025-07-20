@@ -58,7 +58,7 @@ class AuthRemoteSourceImpl implements AuthRemoteSource {
       VerifyOtpModel params) async {
     try {
       final response = await networkManager.postData(
-        url: 'auth/request-otp/',
+        url: 'auth/verify-otp/',
         useAuthorization: true,
         data: params.toJson(),
       );

@@ -1,384 +1,326 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:clinic/core/constants/color_constants.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:shimmer/shimmer.dart';
 
-enum CustomImageType {
-  rectangle,
-  circle,
-  rounded,
+/// Custom cache manager - rasmlar uchun maxsus sozlamalar
+class CustomImageCacheManager {
+  static const key = 'customImageCache';
+
+  static CacheManager instance = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 7), // 7 kun cache saqlash
+      maxNrOfCacheObjects: 200, // maksimal 200 ta rasm
+      repo: JsonCacheInfoRepository(databaseName: key),
+      fileSystem: IOFileSystem(key),
+      fileService: HttpFileService(),
+    ),
+  );
 }
 
-class CustomCachedImage extends StatelessWidget {
-  /// Rasm URL'i
-  final String? imageUrl;
-  
-  /// Rasm o'lchami
+/// Shimmer placeholder widget
+class ShimmerPlaceholder extends StatelessWidget {
   final double? width;
   final double? height;
-  
-  /// Rasm turi
-  final CustomImageType type;
-  
-  /// Rasm joylashishi
-  final BoxFit fit;
-  
-  /// Border radius (faqat rounded type uchun)
-  final double borderRadius;
-  
-  /// Placeholder widget
-  final Widget? placeholder;
-  
-  /// Xatolik widget'i
-  final Widget? errorWidget;
-  
-  /// Loading indikatori rangi
-  final Color? loadingColor;
-  
-  /// Default avatar text (agar rasm bo'lmasa)
-  final String? fallbackText;
-  
-  /// Fallback icon
-  final IconData? fallbackIcon;
-  
-  /// Background color
-  final Color? backgroundColor;
-  
-  /// Text color (fallback uchun)
-  final Color? textColor;
-  
-  /// Headers (autentifikatsiya uchun)
-  final Map<String, String>? headers;
-  
-  /// Rasm bosilganda
-  final VoidCallback? onTap;
-  
-  /// Cache kaliti (maxsus cache uchun)
-  final String? cacheKey;
-  
-  /// Fade animatsiya davomiyligi
-  final Duration fadeInDuration;
-  
-  /// Border
-  final Border? border;
-  
-  /// Box shadow
-  final List<BoxShadow>? boxShadow;
-  
-  /// Memory cache
-  final bool memCacheEnabled;
-  
-  /// Disk cache
-  final bool diskCacheEnabled;
+  final BorderRadius? borderRadius;
+  final Color baseColor;
+  final Color highlightColor;
 
-  const CustomCachedImage({
+  const ShimmerPlaceholder({
     super.key,
-    this.imageUrl,
     this.width,
     this.height,
-    this.type = CustomImageType.rectangle,
-    this.fit = BoxFit.cover,
-    this.borderRadius = 12,
-    this.placeholder,
-    this.errorWidget,
-    this.loadingColor,
-    this.fallbackText,
-    this.fallbackIcon,
-    this.backgroundColor,
-    this.textColor,
-    this.headers,
-    this.onTap,
-    this.cacheKey,
-    this.fadeInDuration = const Duration(milliseconds: 300),
-    this.border,
-    this.boxShadow,
-    this.memCacheEnabled = true,
-    this.diskCacheEnabled = true,
+    this.borderRadius,
+    this.baseColor = const Color(0xFFE0E0E0),
+    this.highlightColor = const Color(0xFFF5F5F5),
   });
-
-  // Factory constructors - oson foydalanish uchun
-  factory CustomCachedImage.avatar({
-    String? imageUrl,
-    double radius = 25,
-    String? fallbackText,
-    Color? backgroundColor,
-    Color? textColor,
-    Map<String, String>? headers,
-    VoidCallback? onTap,
-    Border? border,
-  }) {
-    return CustomCachedImage(
-      imageUrl: imageUrl,
-      width: radius * 2,
-      height: radius * 2,
-      type: CustomImageType.circle,
-      fallbackText: fallbackText,
-      backgroundColor: backgroundColor,
-      textColor: textColor,
-      headers: headers,
-      onTap: onTap,
-      border: border,
-    );
-  }
-
-  factory CustomCachedImage.card({
-    String? imageUrl,
-    double? width,
-    double? height,
-    double borderRadius = 12,
-    BoxFit fit = BoxFit.cover,
-    Map<String, String>? headers,
-    VoidCallback? onTap,
-    List<BoxShadow>? boxShadow,
-  }) {
-    return CustomCachedImage(
-      imageUrl: imageUrl,
-      width: width,
-      height: height,
-      type: CustomImageType.rounded,
-      borderRadius: borderRadius,
-      fit: fit,
-      headers: headers,
-      onTap: onTap,
-      boxShadow: boxShadow,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    Widget imageWidget = _buildImageWidget();
-
-    // Container bilan o'rash (shadow, border uchun)
-    if (boxShadow != null || border != null) {
-      imageWidget = Container(
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      period: const Duration(milliseconds: 1200),
+      child: Container(
+        width: width,
+        height: height,
         decoration: BoxDecoration(
-          borderRadius: _getBorderRadius(),
-          boxShadow: boxShadow,
-          border: border,
+          color: baseColor,
+          borderRadius: borderRadius ?? BorderRadius.zero,
         ),
-        child: ClipRRect(
-          borderRadius: _getBorderRadius(),
-          child: imageWidget,
-        ),
-      );
-    }
-
-    // Tap qo'shish
-    if (onTap != null) {
-      imageWidget = GestureDetector(
-        onTap: onTap,
-        child: imageWidget,
-      );
-    }
-
-    return imageWidget;
-  }
-
-  Widget _buildImageWidget() {
-    // Agar URL bo'sh bo'lsa, to'g'ridan-to'g'ri fallback ko'rsatish
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      return _buildFallbackWidget();
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imageUrl!,
-      width: width,
-      height: height,
-      fit: fit,
-      cacheKey: cacheKey,
-      fadeInDuration: fadeInDuration,
-      memCacheHeight: _getMemCacheSize(),
-      memCacheWidth: _getMemCacheSize(),
-      httpHeaders: headers ?? _getDefaultHeaders(),
-      imageBuilder: (context, imageProvider) => _buildImageContainer(imageProvider),
-      placeholder: (context, url) => placeholder ?? _buildLoadingWidget(),
-      errorWidget: (context, url, error) => errorWidget ?? _buildErrorWidget(),
-      // Cache sozlamalari
-      cacheManager: diskCacheEnabled ? null : null, // Default manager ishlatish
+      ),
     );
   }
+}
 
-  Widget _buildImageContainer(ImageProvider imageProvider) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        borderRadius: _getBorderRadius(),
-        image: DecorationImage(
-          image: imageProvider,
+/// Universal cache image widget
+class CacheImageWidget extends StatelessWidget {
+  final String imageUrl;
+  final double? width;
+  final double? height;
+  final BoxFit fit;
+  final Widget? placeholder;
+  final Widget? errorWidget;
+  final BorderRadius? borderRadius;
+  final Color? backgroundColor;
+  final Duration fadeDuration;
+  final bool enableMemoryCache;
+  final Map<String, String>? httpHeaders;
+  final bool useShimmer;
+  final Color shimmerBaseColor;
+  final Color shimmerHighlightColor;
+
+  const CacheImageWidget({
+    super.key,
+    required this.imageUrl,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.placeholder,
+    this.errorWidget,
+    this.borderRadius,
+    this.backgroundColor,
+    this.fadeDuration = const Duration(milliseconds: 500),
+    this.enableMemoryCache = true,
+    this.httpHeaders,
+    this.useShimmer = true,
+    this.shimmerBaseColor = const Color(0xFFE0E0E0),
+    this.shimmerHighlightColor = const Color(0xFFF5F5F5),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius ?? BorderRadius.zero,
+      child: Container(
+        width: width,
+        height: height,
+        color: backgroundColor,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          width: width,
+          height: height,
           fit: fit,
+          cacheManager: CustomImageCacheManager.instance,
+          fadeInDuration: fadeDuration,
+          memCacheWidth: enableMemoryCache ? _getMemCacheSize(width) : null,
+          memCacheHeight: enableMemoryCache ? _getMemCacheSize(height) : null,
+          httpHeaders: httpHeaders,
+          placeholder: (context, url) => _buildPlaceholder(),
+          errorWidget: (context, url, error) => _buildErrorWidget(),
         ),
       ),
     );
   }
 
-  Widget _buildLoadingWidget() {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.grey.shade100,
-        borderRadius: _getBorderRadius(),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: _getLoadingSize(),
-              height: _getLoadingSize(),
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  loadingColor ?? ColorConstants.primaryColor,
-                ),
-              ),
-            ),
-            if (_shouldShowLoadingText()) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Загрузка...',
-                style: TextStyle(
-                  fontSize: _getLoadingTextSize(),
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  /// Memory cache uchun optimal o'lcham hisoblash
+  int? _getMemCacheSize(double? size) {
+    if (size == null) return null;
+    // Device pixel ratio ni hisobga olib optimal o'lcham qaytarish
+    return (size * 2).round(); // Standard 2x scaling
   }
 
-  Widget _buildErrorWidget() {
-    return _buildFallbackWidget();
-  }
+  /// Shimmer yoki default placeholder
+  Widget _buildPlaceholder() {
+    if (placeholder != null) return placeholder!;
 
-  Widget _buildFallbackWidget() {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: backgroundColor ?? 
-               (type == CustomImageType.circle 
-                   ? ColorConstants.primaryColor.withOpacity(0.1)
-                   : Colors.grey.shade100),
-        borderRadius: _getBorderRadius(),
-        border: type != CustomImageType.circle 
-            ? Border.all(color: Colors.grey.shade300)
-            : null,
-      ),
-      child: Center(
-        child: _buildFallbackContent(),
-      ),
-    );
-  }
-
-  Widget _buildFallbackContent() {
-    // Agar fallback text berilgan bo'lsa
-    if (fallbackText != null && fallbackText!.isNotEmpty) {
-      return Text(
-        fallbackText!.substring(0, 1).toUpperCase(),
-        style: TextStyle(
-          fontSize: _getFallbackTextSize(),
-          fontWeight: FontWeight.bold,
-          color: textColor ?? ColorConstants.primaryColor,
-        ),
+    if (useShimmer) {
+      return ShimmerPlaceholder(
+        width: width,
+        height: height,
+        borderRadius: borderRadius,
+        baseColor: shimmerBaseColor,
+        highlightColor: shimmerHighlightColor,
       );
     }
 
-    // Icon ko'rsatish
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          fallbackIcon ?? 
-          (type == CustomImageType.circle 
-              ? Icons.person_outline_rounded
-              : Icons.image_not_supported_outlined),
-          size: _getFallbackIconSize(),
-          color: textColor ?? Colors.grey.shade400,
+    return Container(
+      color: Colors.grey[200],
+      child: const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
         ),
-        if (_shouldShowErrorText()) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Rasm yo\'q',
-            style: TextStyle(
-              fontSize: _getErrorTextSize(),
-              color: Colors.grey.shade500,
-            ),
-          ),
-        ],
-      ],
+      ),
     );
   }
 
-  // Helper methodlar
-  BorderRadius _getBorderRadius() {
-    switch (type) {
-      case CustomImageType.circle:
-        final radius = (width ?? height ?? 50) / 2;
-        return BorderRadius.circular(radius);
-      case CustomImageType.rounded:
-        return BorderRadius.circular(borderRadius);
-      case CustomImageType.rectangle:
-        return BorderRadius.zero;
-    }
+  /// Default error widget
+  Widget _buildErrorWidget() {
+    return errorWidget ??
+        Container(
+          color: Colors.grey[100],
+          child: const Icon(
+            Icons.broken_image_outlined,
+            color: Colors.grey,
+            size: 40,
+          ),
+        );
+  }
+}
+
+/// Avatar uchun maxsus cache image
+class CacheAvatarWidget extends StatelessWidget {
+  final String imageUrl;
+  final double radius;
+  final Widget? placeholder;
+  final Widget? errorWidget;
+  final Color? backgroundColor;
+  final bool useShimmer;
+
+  const CacheAvatarWidget({
+    super.key,
+    required this.imageUrl,
+    this.radius = 25,
+    this.placeholder,
+    this.errorWidget,
+    this.backgroundColor,
+    this.useShimmer = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: backgroundColor ?? Colors.grey[200],
+      child: ClipOval(
+        child: CacheImageWidget(
+          imageUrl: imageUrl,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          useShimmer: useShimmer,
+          borderRadius: BorderRadius.circular(radius),
+          placeholder: placeholder ??
+              (useShimmer
+                  ? ShimmerPlaceholder(
+                      width: radius * 2,
+                      height: radius * 2,
+                      borderRadius: BorderRadius.circular(radius),
+                    )
+                  : Icon(Icons.person, size: radius, color: Colors.grey)),
+          errorWidget: errorWidget ??
+              Icon(Icons.person, size: radius, color: Colors.grey),
+        ),
+      ),
+    );
+  }
+}
+
+class CacheThumbnailWidget extends StatelessWidget {
+  final String imageUrl;
+  final VoidCallback? onTap;
+  final double size;
+  final bool showOverlay;
+  final bool useShimmer;
+
+  const CacheThumbnailWidget({
+    super.key,
+    required this.imageUrl,
+    this.onTap,
+    this.size = 80,
+    this.showOverlay = false,
+    this.useShimmer = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          CacheImageWidget(
+            imageUrl: imageUrl,
+            width: size,
+            height: size,
+            borderRadius: BorderRadius.circular(8),
+            fit: BoxFit.cover,
+            useShimmer: useShimmer,
+          ),
+          if (showOverlay)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.black.withOpacity(0.3),
+                ),
+                child: const Icon(
+                  Icons.zoom_in,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Image cache service - global boshqaruv uchun
+class ImageCacheService {
+  static final ImageCacheService _instance = ImageCacheService._internal();
+  static ImageCacheService get instance => _instance;
+  ImageCacheService._internal();
+
+  /// Barcha cache ni tozalash
+  Future<void> clearAllCache() async {
+    await CustomImageCacheManager.instance.emptyCache();
   }
 
-  Map<String, String> _getDefaultHeaders() {
+  /// Ma'lum bir rasmni cache dan o'chirish
+  Future<void> evictFromCache(String imageUrl) async {
+    await CustomImageCacheManager.instance.removeFile(imageUrl);
+  }
+
+  /// Cache o'lchamini olish
+  Future<int> getCacheSize() async {
+    final cacheDir = await getTemporaryDirectory();
+    int totalSize = 0;
+
+    await for (var entity in cacheDir.list(recursive: true)) {
+      if (entity is File) {
+        totalSize += await entity.length();
+      }
+    }
+
+    return totalSize;
+  }
+
+  /// Cache statistikasini olish
+  Future<Map<String, dynamic>> getCacheStats() async {
+    final size = await getCacheSize();
+    final cacheDir = await getTemporaryDirectory();
+    final fileCount = await cacheDir.list().length;
+
     return {
-      'User-Agent': 'Flutter App',
-      'Accept': 'image/*',
+      'size': size,
+      'sizeFormatted': _formatBytes(size),
+      'fileCount': fileCount,
     };
   }
 
-  int? _getMemCacheSize() {
-    if (!memCacheEnabled) return null;
-    
-    final size = (width ?? height ?? 100).toInt();
-    return size > 300 ? 300 : size; // Max 300px cache
-  }
-
-  double _getLoadingSize() {
-    final containerSize = width ?? height ?? 60;
-    return containerSize > 100 ? 24 : 16;
-  }
-
-  double _getLoadingTextSize() {
-    final containerSize = width ?? height ?? 60;
-    return containerSize > 100 ? 12 : 10;
-  }
-
-  double _getFallbackTextSize() {
-    final containerSize = width ?? height ?? 60;
-    if (type == CustomImageType.circle) {
-      return containerSize / 3;
+  /// Bytes ni odam o'qiydigan formatga o'tkazish
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
-    return containerSize > 100 ? 24 : 16;
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
-  double _getFallbackIconSize() {
-    final containerSize = width ?? height ?? 60;
-    if (type == CustomImageType.circle) {
-      return containerSize / 2.5;
-    }
-    return containerSize > 100 ? 32 : 24;
+  /// Rasmni oldindan cache ga yuklash
+  Future<void> preCache(String imageUrl) async {
+    await CustomImageCacheManager.instance.downloadFile(imageUrl);
   }
 
-  double _getErrorTextSize() {
-    final containerSize = width ?? height ?? 60;
-    return containerSize > 100 ? 10 : 8;
-  }
-
-  bool _shouldShowLoadingText() {
-    final containerSize = width ?? height ?? 60;
-    return containerSize >= 80;
-  }
-
-  bool _shouldShowErrorText() {
-    final containerSize = width ?? height ?? 60;
-    return containerSize >= 80 && type != CustomImageType.circle;
+  /// Bir nechta rasmlarni oldindan yuklash
+  Future<void> preCacheMultiple(List<String> imageUrls) async {
+    final futures = imageUrls.map((url) => preCache(url));
+    await Future.wait(futures);
   }
 }

@@ -1,9 +1,9 @@
+import 'package:clinic/core/di/export/di_export.dart';
 import 'package:clinic/features/client/home/presentation/widgets/doctor_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/features/client/home/domain/illness/entities/illness_entities.dart';
-import 'package:clinic/features/client/home/presentation/bloc/illness/illness_bloc.dart';
 
 class IllnessDetailsScreen extends StatelessWidget {
   final IllnessEntities illness;
@@ -17,21 +17,25 @@ class IllnessDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(illness.name),
+        title: Text(illness.specialization),
       ),
-      body: BlocBuilder<IllnessBloc, IllnessState>(
+      body: BlocBuilder<DoctorBloc, DoctorState>(
         builder: (context, state) {
-          if (state is IllnessDetailsLoading) {
+          if (state is DoctorLoading) {
             return const Center(child: CupertinoActivityIndicator());
           }
 
-          if (state is IllnessDetailsError) {
+          if (state is DoctorError) {
             return Center(child: Text(state.message));
           }
 
-          if (state is IllnessDetailsLoaded) {
-            final illness = state.illness;
-            if (illness.doctors.isEmpty) {
+          if (state is DoctorLoaded) {
+            final illnes = state.doctors
+                .where((element) =>
+                    element.specialization.toLowerCase() ==
+                    illness.specialization.toLowerCase())
+                .toList();
+            if (illnes.isEmpty) {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -76,12 +80,15 @@ class IllnessDetailsScreen extends StatelessWidget {
             }
             return ListView.builder(
               padding: EdgeInsets.all(16),
-              itemCount: illness.doctors.length,
+              itemCount: illnes.length,
               itemBuilder: (context, index) {
-                final doctor = illness.doctors[index];
+                final doctor = illnes[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: DoctorCard(doctor: doctor),
+                  child: DoctorCard(
+                    doctor: doctor,
+                    heroKey: 'illness_screen',
+                  ),
                 );
               },
             );

@@ -16,13 +16,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Asosiy ScrollController
+  // Основной ScrollController
   final ScrollController _scrollController = ScrollController();
 
-  // Aktiv tab indeksi
+  // Активный индекс вкладки
   int _currentIndex = 0;
 
-  // Ma'lumotlarni yuklash holati
+  // Состояние загрузки данных
   bool _doctorsLoaded = false;
   bool _clinicsLoaded = false;
 
@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadDoctorsData();
   }
 
-  // Doktorlar ma'lumotlarini yuklash
+  // Загрузка данных для первой вкладки
   void _loadDoctorsData() {
     if (!_doctorsLoaded) {
       context.read<DoctorBloc>().add(const GetDoctorEvent());
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Klinikalar ma'lumotlarini yuklash
+  // Загрузка данных о врачах
   void _loadClinicsData() {
     if (!_clinicsLoaded) {
       context.read<ClinicsBloc>().add(const GetClinicsEvent());
@@ -51,14 +51,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Tab almashish logikasi
+  // Логика переключения вкладок
   void _switchTab(int index) {
     if (_currentIndex != index) {
       setState(() {
         _currentIndex = index;
       });
 
-      // Ma'lumotlarni kerak bo'lganda yuklash
+      // Загрузка данных при необходимости
       if (index == 0) {
         _loadDoctorsData();
       } else if (index == 1) {
@@ -128,8 +128,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // AppBar
-
             // Kasalliklar kategoriyalari
             SliverToBoxAdapter(
               child: Padding(
@@ -143,16 +141,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _buildTabBar(context),
             ),
 
-            // Main Content - IndexedStack orqali tab contentlarini ko'rsatish
-            SliverFillRemaining(
-              child: IndexedStack(
-                index: _currentIndex,
-                sizing: StackFit.expand,
-                children: const [
-                  DoctorItems(),
-                  ClinicsItem(),
-                ],
-              ),
+            // ASOSIY O'ZGARISH: SliverToBoxAdapter orqali content ko'rsatish
+            SliverToBoxAdapter(
+              child: _currentIndex == 0
+                  ? const DoctorItems()
+                  : const ClinicsItem(),
             ),
           ],
         ),

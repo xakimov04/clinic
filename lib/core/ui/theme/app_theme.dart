@@ -109,7 +109,7 @@ class AppTheme {
       ),
 
       // Card temasi
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.white,
         elevation: 2,
         shadowColor: ColorConstants.shadowColor,
@@ -170,7 +170,7 @@ class AppTheme {
       ),
 
       // Dialog dizayni
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: Colors.white,
         elevation: 8,
         shape: RoundedRectangleBorder(

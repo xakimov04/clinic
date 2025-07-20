@@ -3,29 +3,26 @@ import 'package:clinic/features/auth/domain/entities/otp_response_entity.dart';
 class OtpResponseModel extends OtpResponseEntity {
   const OtpResponseModel({
     required super.detail,
-    required super.token,
+    required super.access,
     required super.userId,
-    required super.userType,
-    required super.isNewUser,
+    required super.refresh,
   });
 
   factory OtpResponseModel.fromJson(Map<String, dynamic> json) {
     return OtpResponseModel(
       detail: json['detail'] ?? '',
-      token: json['token'] ?? '',
+      access: json['access'] ?? '',
       userId: json['user_id'] ?? 0,
-      userType: json['user_type'] ?? '',
-      isNewUser: json['is_new_user'] ?? false,
+      refresh: json['refresh'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'detail': detail,
-      'token': token,
+      'access': access,
       'user_id': userId,
-      'user_type': userType,
-      'is_new_user': isNewUser,
+      'refresh': refresh,
     };
   }
 }

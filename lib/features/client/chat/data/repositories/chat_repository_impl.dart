@@ -19,7 +19,7 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createChats(String patientId) async {
+  Future<Either<Failure, ChatEntity>> createChats(String patientId) async {
     final result = await remoteDataSource.createChats(patientId);
     return result.fold(
       (failure) => Left(failure),

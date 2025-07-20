@@ -27,16 +27,20 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>vk53532182</string>
+				<string>vk53840927</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string></string>
+	<key>LSApplicationQueriesSchemes</key> 
+	<array> 
+		<string>vk</string> 
+		<string>vk-share</string> 
+		<string>vkauthorize</string> 
 	</array>
+	<key>VKAppId</key>
+	<string>53840927</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
@@ -63,7 +67,7 @@
 		<string>vkauthorize-silent</string>
 	</array>
 	<key>VK_APP_CLIENT_ID</key>
-	<string>53532182</string>
+	<string>53840927</string>
 	<key>VK_APP_CLIENT_SECRET</key>
 	<string>KQBd1GclfuqBRDB0W7P9</string>
 </dict>

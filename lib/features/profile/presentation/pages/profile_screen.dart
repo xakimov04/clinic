@@ -2,8 +2,10 @@ import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/di/injection_container.dart';
 import 'package:clinic/core/local/local_storage_service.dart';
 import 'package:clinic/core/local/storage_keys.dart';
+import 'package:clinic/core/role_management/role_manager.dart';
 import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
+import 'package:clinic/features/client/profile/presentation/pages/faq_screen.dart';
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -90,6 +92,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  String formatToRussianPhone(String rawPhone) {
+    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+
+    // Agar raqamda 11 ta raqam bo'lsa va boshida 7 bo'lmasa, qo'shib yubor
+    final cleaned = digits.length == 11 && digits.startsWith('7')
+        ? digits
+        : digits.length == 10
+            ? '7$digits'
+            : digits;
+
+    // Formatlash: +7 (XXX) XXX-XX-XX
+    if (cleaned.length == 11) {
+      final buffer = StringBuffer();
+      buffer.write('+7 ');
+      buffer.write('(${cleaned.substring(1, 4)}) ');
+      buffer.write('${cleaned.substring(4, 7)}-');
+      buffer.write('${cleaned.substring(7, 9)}-');
+      buffer.write(cleaned.substring(9));
+      return buffer.toString();
+    }
+
+    return '+7 ';
+  }
+
   Widget _buildLoaded(BuildContext context, ProfileEntities user) {
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -133,49 +159,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       child: Center(
-                        child: CustomCachedImage(
-                          imageUrl: user.avatar,
-                          width: 50,
-                          height: 50,
-                          type: CustomImageType.circle,
+                        child: CacheAvatarWidget(
+                          imageUrl: user.avatar ?? "",
                           backgroundColor: const Color(0xFFF5F7FA),
                         ),
                       ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
-                      child: FutureBuilder<String?>(
-                        future: sl<LocalStorageService>()
-                            .getString(StorageKeys.userRole),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const CircularProgressIndicator(); // yoki shunchaki bo'sh `SizedBox()`
-                          }
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.name,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF333333),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                user.email,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          );
-                        },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${user.firstName} ${user.lastName} ${user.middleName}",
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF333333),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            formatToRussianPhone(user.phoneNumber ?? ""),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -197,21 +209,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    _buildMenuItem(
-                      icon: Icons.person_outline,
-                      title: "Детали профиля",
-                      onTap: () => _navigateToDetails(user),
-                    ),
-                    _buildDivider(),
-                    _buildMenuItem(
-                      icon: Icons.help_outline_rounded,
-                      title: "FAQ",
-                      onTap: () {},
-                    ),
-                  ],
-                ),
+                child: FutureBuilder(
+                    future: sl<LocalStorageService>()
+                        .getString(StorageKeys.userRole),
+                    builder: (context, asyncSnapshot) {
+                      return Column(
+                        children: [
+                          _buildMenuItem(
+                            icon: Icons.person_outline,
+                            title: "Детали профиля",
+                            onTap: () => _navigateToDetails(user),
+                          ),
+                          _buildDivider(),
+                          if (asyncSnapshot.data == UserRole.client.name) ...[
+                            _buildMenuItem(
+                              icon: Icons.folder_open,
+                              title: "Медицинская карта",
+                              onTap: () =>
+                                  context.push(RoutePaths.receptionsScreen),
+                            ),
+                            _buildDivider(),
+                          ],
+                          _buildMenuItem(
+                            icon: Icons.help_outline_rounded,
+                            title: "FAQ",
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FaqScreen(),
+                                  ));
+                            },
+                          ),
+                        ],
+                      );
+                    }),
               ),
 
               const SizedBox(height: 30),

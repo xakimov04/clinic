@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:clinic/core/ui/widgets/controls/russian_text_selection_controls.dart';
 import 'package:clinic/features/client/chat/domain/entities/message_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
   bool _isComposing = false;
   bool _showScrollToBottom = false;
+  bool _isInitialLoad = true;
 
   @override
   void initState() {
@@ -62,10 +64,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
   void _setupScrollListener() {
     _scrollController.addListener(() {
-      final showButton = _scrollController.offset > 200;
-      if (showButton != _showScrollToBottom) {
+      // Scroll to bottom tugmasini ko'rsatish mantiqini optimallashtiramiz
+      final isScrolledUp = _scrollController.hasClients &&
+          _scrollController.offset >
+              _scrollController.position.maxScrollExtent - 1000;
+
+      if (isScrolledUp != _showScrollToBottom) {
         setState(() {
-          _showScrollToBottom = showButton;
+          _showScrollToBottom = !isScrolledUp;
         });
       }
     });
@@ -86,7 +92,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     _scrollController.dispose();
     _messageFocusNode.dispose();
     _animationController.dispose();
-
     context.read<ChatDetailBloc>().disposeChat();
     super.dispose();
   }
@@ -96,38 +101,53 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     return Scaffold(
       backgroundColor: ColorConstants.backgroundColor,
       appBar: _buildAppBar(),
-      body: BlocConsumer<ChatDetailBloc, ChatDetailState>(
-        listener: (context, state) {
-          if (state is MessageSendError) {
-            CustomSnackbar.showError(
-              context: context,
-              message: state.error,
-            );
-          } else if (state is ChatDetailError) {
-            CustomSnackbar.showError(
-              context: context,
-              message: state.message,
-            );
-          } else if (state is ChatDetailLoaded && state.messages.isNotEmpty) {
-            // Yangi xabar kelganda pastga scroll qilish
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _scrollToBottom();
-            });
-          }
-        },
-        builder: (context, state) {
-          return Column(
-            children: [
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: _buildMessagesList(state),
-                ),
-              ),
-              _buildInputArea(state),
-            ],
-          );
-        },
+      body: Stack(
+        children: [
+          BlocConsumer<ChatDetailBloc, ChatDetailState>(
+            listener: (context, state) {
+              if (state is MessageSendError) {
+                CustomSnackbar.showError(
+                  context: context,
+                  message: state.error,
+                );
+              } else if (state is ChatDetailError) {
+                CustomSnackbar.showError(
+                  context: context,
+                  message: state.message,
+                );
+              } else if (state is ChatDetailLoaded) {
+                // Telegram uslubida - faqat yangi xabar yuborganimizda scroll qilamiz
+                // yoki birinchi yuklanishda
+                if (_isInitialLoad && state.messages.isNotEmpty) {
+                  _isInitialLoad = false;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _scrollToBottomInstant();
+                  });
+                }
+              }
+            },
+            builder: (context, state) {
+              return Column(
+                children: [
+                  Expanded(
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: _buildMessagesList(state),
+                    ),
+                  ),
+                  _buildInputArea(state),
+                ],
+              );
+            },
+          ),
+          // Scroll to bottom button
+          if (_showScrollToBottom)
+            Positioned(
+              right: 16,
+              bottom: 100,
+              child: _buildScrollToBottomButton(),
+            ),
+        ],
       ),
     );
   }
@@ -136,39 +156,17 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 1,
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+      ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: ColorConstants.textColor),
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  ColorConstants.primaryColor,
-                  ColorConstants.primaryColor.withOpacity(0.7),
-                ],
-              ),
-            ),
-            child: Center(
-              child: Text(
-                widget.chat.doctorName.isNotEmpty
-                    ? widget.chat.doctorName[0].toUpperCase()
-                    : 'Д',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
+          _buildDoctorAvatar(),
           12.w,
           Expanded(
             child: Column(
@@ -184,10 +182,55 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                Text(
+                  'online', // Bu statusni real ma'lumotdan olish kerak
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: ColorConstants.primaryColor.withOpacity(0.8),
+                  ),
+                ),
               ],
             ),
           ),
         ],
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.more_vert, color: ColorConstants.textColor),
+          onPressed: () {
+            // Chat options
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDoctorAvatar() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ColorConstants.primaryColor,
+            ColorConstants.primaryColor.withOpacity(0.7),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          widget.chat.doctorName.isNotEmpty
+              ? widget.chat.doctorName[0].toUpperCase()
+              : 'Д',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -199,7 +242,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
       if (state.messages.isEmpty) {
         return _buildEmptyState();
       }
-      return _buildMessagesListView(state.messages);
+      return _buildOptimizedMessagesListView(state.messages);
     } else if (state is ChatDetailError) {
       return _buildErrorState(state.message);
     }
@@ -207,26 +250,98 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     return const SizedBox.shrink();
   }
 
+  Widget _buildOptimizedMessagesListView(List<MessageEntity> messages) {
+    // Telegram uslubida - reversed ListView
+    return ListView.builder(
+      controller: _scrollController,
+      reverse: true, // Bu muhim! Telegram kabi pastdan boshlanadi
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 8,
+        bottom: 8,
+      ),
+      itemCount: messages.length,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      itemBuilder: (context, index) {
+        // reverse bo'lgani uchun index'ni teskarisiga aylantiramiz
+        final reversedIndex = messages.length - 1 - index;
+        final message = messages[reversedIndex];
+        final nextMessage =
+            reversedIndex > 0 ? messages[reversedIndex - 1] : null;
+        final previousMessage = reversedIndex < messages.length - 1
+            ? messages[reversedIndex + 1]
+            : null;
+
+        final showDateDivider =
+            _shouldShowDateDivider(message, previousMessage);
+        final showAvatar = _shouldShowAvatar(message, nextMessage);
+
+        return Column(
+          children: [
+            if (showDateDivider) _buildDateDivider(message.timestamp),
+            _MessageBubble(
+              message: message,
+              showAvatar: showAvatar,
+              isLast: reversedIndex == messages.length - 1,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildScrollToBottomButton() {
+    return AnimatedOpacity(
+      opacity: _showScrollToBottom ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: ColorConstants.primaryColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: _scrollToBottomAnimated,
+            child: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildLoadingState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            height: 40,
-            width: 40,
-            child: Platform.isIOS
-                ? const CupertinoActivityIndicator(
-                    animating: true,
-                    color: ColorConstants.primaryColor,
-                  )
-                : const CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        ColorConstants.primaryColor),
-                  ),
-          ),
-        ],
+      child: SizedBox(
+        height: 40,
+        width: 40,
+        child: Platform.isIOS
+            ? const CupertinoActivityIndicator(
+                animating: true,
+                color: ColorConstants.primaryColor,
+              )
+            : const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(ColorConstants.primaryColor),
+              ),
       ),
     );
   }
@@ -253,7 +368,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             24.h,
             const Text(
-              'Начните общение',
+              'Suhbatni boshlang',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -262,7 +377,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             8.h,
             const Text(
-              'Отправьте первое сообщение врачу',
+              'Shifokorga birinchi xabaringizni yuboring',
               style: TextStyle(
                 fontSize: 14,
                 color: ColorConstants.secondaryTextColor,
@@ -289,7 +404,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             16.h,
             const Text(
-              'Ошибка загрузки',
+              'Xatolik yuz berdi',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -309,7 +424,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ElevatedButton.icon(
               onPressed: _loadMessages,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Повторить'),
+              label: const Text('Qayta urinish'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.primaryColor,
                 foregroundColor: Colors.white,
@@ -318,31 +433,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMessagesListView(List<MessageEntity> messages) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: messages.length,
-      physics: const BouncingScrollPhysics(),
-      itemBuilder: (context, index) {
-        final message = messages[index];
-        final previousMessage = index > 0 ? messages[index - 1] : null;
-        final showDateDivider =
-            _shouldShowDateDivider(message, previousMessage);
-
-        return Column(
-          children: [
-            if (showDateDivider) _buildDateDivider(message.timestamp),
-            _MessageBubble(
-              message: message,
-              showAvatar: _shouldShowAvatar(message, index, messages),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -363,12 +453,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     return currentDate != previousDate;
   }
 
-  bool _shouldShowAvatar(
-      MessageEntity message, int index, List<MessageEntity> messages) {
+  bool _shouldShowAvatar(MessageEntity message, MessageEntity? nextMessage) {
     if (message.isFromCurrentUser) return false;
-    if (index == messages.length - 1) return true;
+    if (nextMessage == null) return true;
 
-    final nextMessage = messages[index + 1];
     return nextMessage.isFromCurrentUser ||
         nextMessage.senderType != message.senderType;
   }
@@ -380,9 +468,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
     String dateText;
     if (messageDate == today) {
-      dateText = 'Сегодня';
+      dateText = 'Bugun';
     } else if (messageDate == today.subtract(const Duration(days: 1))) {
-      dateText = 'Вчера';
+      dateText = 'Kecha';
     } else {
       dateText = '${date.day}.${date.month}.${date.year}';
     }
@@ -417,87 +505,106 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     final isSending = state is ChatDetailLoaded && state.isSendingMessage;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, -1),
           ),
         ],
       ),
       child: SafeArea(
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 44,
+                  maxHeight: 120,
+                ),
                 decoration: BoxDecoration(
                   color: ColorConstants.backgroundColor,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: ColorConstants.borderColor.withOpacity(0.5),
+                    color: _messageFocusNode.hasFocus
+                        ? ColorConstants.primaryColor.withOpacity(0.3)
+                        : ColorConstants.borderColor.withOpacity(0.3),
+                    width: 1,
                   ),
                 ),
                 child: TextField(
+                  contextMenuBuilder: RussianContextMenu.build,
                   controller: _messageController,
                   focusNode: _messageFocusNode,
                   enabled: !isSending,
                   maxLines: null,
+                  minLines: 1,
                   textCapitalization: TextCapitalization.sentences,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
                   decoration: const InputDecoration(
-                    hintText: 'Введите сообщение...',
+                    hintText: 'Xabar yozing...',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
-                      horizontal: 20,
+                      horizontal: 16,
                       vertical: 12,
                     ),
+                    isDense: true,
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
               ),
             ),
-            12.w,
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: _isComposing && !isSending
-                    ? ColorConstants.primaryColor
-                    : ColorConstants.primaryColor.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: _isComposing && !isSending ? _sendMessage : null,
-                  child: Center(
-                    child: isSending
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-                          )
-                        : Icon(
-                            Icons.send_rounded,
-                            color: _isComposing
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.6),
-                            size: 20,
-                          ),
-                  ),
-                ),
-              ),
-            ),
+            8.w,
+            _buildSendButton(isSending),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSendButton(bool isSending) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: _isComposing && !isSending
+            ? ColorConstants.primaryColor
+            : ColorConstants.primaryColor.withOpacity(0.3),
+        shape: BoxShape.circle,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: _isComposing && !isSending ? _sendMessage : null,
+          child: Center(
+            child: isSending
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  )
+                : Icon(
+                    Icons.send_rounded,
+                    color: _isComposing
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.6),
+                    size: 20,
+                  ),
+          ),
         ),
       ),
     );
@@ -505,9 +612,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
   void _sendMessage() {
     final content = _messageController.text.trim();
-    if (content.isEmpty) return;
+    if (content.isEmpty || !_isComposing) return;
 
-    // Haptic feedback
     HapticFeedback.lightImpact();
 
     context.read<ChatDetailBloc>().add(
@@ -518,34 +624,50 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         );
 
     _messageController.clear();
-    _scrollToBottom();
+    setState(() {
+      _isComposing = false;
+    });
+
+    // Xabar yuborganda darhol pastga scroll qilamiz
+    _scrollToBottomAnimated();
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottomAnimated() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
+        0, // reverse=true bo'lgani uchun 0 eng pastki pozitsiya
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     }
   }
+
+  void _scrollToBottomInstant() {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+  }
 }
 
-// Message Bubble Widget
+// Optimallashtirilgan Message Bubble Widget
 class _MessageBubble extends StatelessWidget {
   final MessageEntity message;
   final bool showAvatar;
+  final bool isLast;
 
   const _MessageBubble({
     required this.message,
     required this.showAvatar,
+    required this.isLast,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 2),
+      margin: EdgeInsets.only(
+        top: 2,
+        bottom: isLast ? 8 : 2, // Oxirgi xabar uchun ko'proq margin
+      ),
       child: Row(
         mainAxisAlignment: message.isFromCurrentUser
             ? MainAxisAlignment.end
@@ -562,34 +684,25 @@ class _MessageBubble extends StatelessWidget {
             child: Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.75,
+                minWidth: 60,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: message.isFromCurrentUser
                     ? ColorConstants.primaryColor
                     : Colors.white,
-                borderRadius: BorderRadius.circular(18).copyWith(
-                  bottomLeft: message.isFromCurrentUser
-                      ? const Radius.circular(18)
-                      : showAvatar
-                          ? const Radius.circular(4)
-                          : const Radius.circular(18),
-                  bottomRight: message.isFromCurrentUser
-                      ? showAvatar
-                          ? const Radius.circular(4)
-                          : const Radius.circular(18)
-                      : const Radius.circular(18),
-                ),
+                borderRadius: _getBorderRadius(),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     message.content,
@@ -598,7 +711,7 @@ class _MessageBubble extends StatelessWidget {
                           ? Colors.white
                           : ColorConstants.textColor,
                       fontSize: 15,
-                      height: 1.4,
+                      height: 1.35,
                     ),
                   ),
                   4.h,
@@ -632,10 +745,30 @@ class _MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (message.isFromCurrentUser) 8.w,
         ],
       ),
     );
+  }
+
+  BorderRadius _getBorderRadius() {
+    const radius = Radius.circular(18);
+    const smallRadius = Radius.circular(4);
+
+    if (message.isFromCurrentUser) {
+      return BorderRadius.only(
+        topLeft: radius,
+        topRight: radius,
+        bottomLeft: radius,
+        bottomRight: showAvatar ? smallRadius : radius,
+      );
+    } else {
+      return BorderRadius.only(
+        topLeft: radius,
+        topRight: radius,
+        bottomLeft: showAvatar ? smallRadius : radius,
+        bottomRight: radius,
+      );
+    }
   }
 
   Widget _buildAvatar() {

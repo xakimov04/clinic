@@ -20,8 +20,6 @@ class LoadDoctorClinics extends AppointmentBookingEvent {
   List<Object?> get props => [doctorId, doctor];
 }
 
-
-
 class SelectClinic extends AppointmentBookingEvent {
   final ClinicEntity clinic;
 
@@ -33,8 +31,9 @@ class SelectClinic extends AppointmentBookingEvent {
 
 class SelectDate extends AppointmentBookingEvent {
   final DateTime date;
+  final String specialization;
 
-  const SelectDate(this.date);
+  const SelectDate(this.date, this.specialization);
 
   @override
   List<Object?> get props => [date];

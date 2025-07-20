@@ -7,11 +7,13 @@ import 'package:clinic/features/client/appointments/domain/usecases/create_appoi
 import 'package:clinic/features/client/appointments/domain/usecases/get_doctor_clinics_usecase.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 part 'appointment_booking_event.dart';
 part 'appointment_booking_state.dart';
 
-class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBookingState> {
+class AppointmentBookingBloc
+    extends Bloc<AppointmentBookingEvent, AppointmentBookingState> {
   final GetDoctorClinicsUsecase _getDoctorClinicsUsecase;
   final CreateAppointmentUsecase _createAppointmentUsecase;
 
@@ -21,7 +23,6 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
   })  : _getDoctorClinicsUsecase = getDoctorClinicsUsecase,
         _createAppointmentUsecase = createAppointmentUsecase,
         super(const AppointmentBookingState()) {
-    
     on<LoadDoctorClinics>(_onLoadDoctorClinics);
     on<SelectClinic>(_onSelectClinic);
     on<SelectDate>(_onSelectDate);
@@ -31,15 +32,17 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
     on<ResetBooking>(_onResetBooking);
   }
 
-  Future<void> _onLoadDoctorClinics(LoadDoctorClinics event, Emitter<AppointmentBookingState> emit) async {
+  Future<void> _onLoadDoctorClinics(
+      LoadDoctorClinics event, Emitter<AppointmentBookingState> emit) async {
     // Avval doctor ma'lumotlarini o'rnatamiz
     emit(state.copyWith(
       status: AppointmentBookingStatus.loading,
       doctor: event.doctor,
     ));
 
-    final result = await _getDoctorClinicsUsecase(GetDoctorClinicsParams(doctorId: event.doctorId));
-    
+    final result = await _getDoctorClinicsUsecase(
+        GetDoctorClinicsParams(doctorId: event.doctorId));
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: AppointmentBookingStatus.error,
@@ -53,12 +56,14 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
     );
   }
 
-  void _onSelectClinic(SelectClinic event, Emitter<AppointmentBookingState> emit) {
+  void _onSelectClinic(
+      SelectClinic event, Emitter<AppointmentBookingState> emit) {
     emit(state.copyWith(selectedClinic: event.clinic));
   }
 
   void _onSelectDate(SelectDate event, Emitter<AppointmentBookingState> emit) {
-    emit(state.copyWith(selectedDate: event.date));
+    emit(state.copyWith(
+        selectedDate: event.date, specialization: event.specialization));
   }
 
   void _onSelectTime(SelectTime event, Emitter<AppointmentBookingState> emit) {
@@ -66,17 +71,26 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
       return slot.copyWith(isSelected: slot.time == event.time);
     }).toList();
 
+    TimeOfDay parseTime(String timeString) {
+      final parts = timeString.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      return TimeOfDay(hour: hour, minute: minute);
+    }
+
     emit(state.copyWith(
       timeSlots: updatedTimeSlots,
-      selectedTime: event.time,
+      selectedTime: parseTime(event.time),
     ));
   }
 
-  void _onUpdateNotes(UpdateNotes event, Emitter<AppointmentBookingState> emit) {
+  void _onUpdateNotes(
+      UpdateNotes event, Emitter<AppointmentBookingState> emit) {
     emit(state.copyWith(notes: event.notes));
   }
 
-  Future<void> _onCreateAppointment(CreateAppointment event, Emitter<AppointmentBookingState> emit) async {
+  Future<void> _onCreateAppointment(
+      CreateAppointment event, Emitter<AppointmentBookingState> emit) async {
     if (!state.isReadyToBook) {
       emit(state.copyWith(
         status: AppointmentBookingStatus.error,
@@ -88,19 +102,20 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
     emit(state.copyWith(status: AppointmentBookingStatus.creating));
 
     final request = CreateAppointmentRequest(
-      doctorId: state.doctor!.id,
-      clinicId: state.selectedClinic!.id,
-      date: state.selectedDate!,
-      time: state.selectedTime!,
-      notes: state.notes,
-    );
+        employeeId: state.doctor!.username,
+        clinicId: state.selectedClinic!.uuid,
+        date: state.selectedDate!,
+        timeBegin: state.selectedTime!,
+        comment: state.notes,
+        specialization: state.specialization);
 
     final result = await _createAppointmentUsecase(request);
-    
+
     result.fold(
       (failure) => emit(state.copyWith(
         status: AppointmentBookingStatus.error,
         errorMessage: failure.message,
+        errorCode: failure.code,
       )),
       (appointment) => emit(state.copyWith(
         status: AppointmentBookingStatus.success,
@@ -108,23 +123,25 @@ class AppointmentBookingBloc extends Bloc<AppointmentBookingEvent, AppointmentBo
     );
   }
 
-  void _onResetBooking(ResetBooking event, Emitter<AppointmentBookingState> emit) {
+  void _onResetBooking(
+      ResetBooking event, Emitter<AppointmentBookingState> emit) {
     emit(const AppointmentBookingState());
   }
 
   List<TimeSlotEntity> _generateTimeSlots() {
     final List<TimeSlotEntity> slots = [];
-    
+
     for (int hour = 9; hour <= 17; hour++) {
       for (int minute = 0; minute < 60; minute += 30) {
-        final timeString = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+        final timeString =
+            '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
         slots.add(TimeSlotEntity(
           time: timeString,
           isAvailable: true,
         ));
       }
     }
-    
+
     return slots;
   }
 }

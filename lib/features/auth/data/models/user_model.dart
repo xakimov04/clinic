@@ -9,10 +9,10 @@ class UserModel extends UserEntities {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      image: json['avatar'],
+      id: json['id'] ?? "",
+      name: json['name'] ?? "",
+      email: json['email'] ?? "",
+      image: json['avatar'] ?? "",
     );
   }
 
@@ -23,5 +23,5 @@ class UserModel extends UserEntities {
       'email': email,
       'avatar': image,
     };
-  } 
+  }
 }

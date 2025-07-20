@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/core/routes/route_paths.dart';
@@ -10,12 +11,14 @@ import 'package:clinic/features/auth/domain/entities/verify_otp_entity.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_event.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_state.dart';
+import 'package:clinic/features/auth/presentation/pages/oauth_screen_mobile.dart';
 import 'package:clinic/features/auth/presentation/widgets/input_formatter.dart';
 import 'package:clinic/features/auth/presentation/widgets/otp_input_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vkid_flutter_sdk/library_vkid.dart';
+import 'package:vk_id/vk_id.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -33,14 +36,37 @@ class _AuthScreenState extends State<AuthScreen>
 
   bool _codeSent = false;
 
-  // Animatsiya uchun
+  // OTP Timer uchun
+  Timer? _otpTimer;
+  int _remainingSeconds = 60;
+  bool _canResendOtp = false;
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  final _vkidController = VkIDController(clID: 53840926);
+  final _redirectUriTextController = TextEditingController();
+  Uri? _authorizeUri;
+  final _authorizeUriTextController = TextEditingController();
+  var _codeVerifier = "";
+
+  final _apiErrNotifier = ValueNotifier<String>("");
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+  }
+
+  void _generateAuthorizeLink() {
+    final pair = _vkidController.generateAuthorizeLinkWithCodeVerifier(
+        redirectUri: _redirectUriTextController.text);
+    final uri = pair.value;
+    if (uri == null) {
+      return;
+    }
+    _authorizeUri = uri;
+    _codeVerifier = pair.key;
+    _authorizeUriTextController.text = uri.toString();
   }
 
   void _setupAnimations() {
@@ -54,10 +80,48 @@ class _AuthScreenState extends State<AuthScreen>
     _animationController.forward();
   }
 
+  void _startOtpTimer() {
+    setState(() {
+      _remainingSeconds = 60;
+      _canResendOtp = false;
+    });
+
+    _otpTimer?.cancel();
+    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+        } else {
+          _canResendOtp = true;
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _stopOtpTimer() {
+    _otpTimer?.cancel();
+    setState(() {
+      _canResendOtp = false;
+    });
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   void dispose() {
     _phoneController.dispose();
     _animationController.dispose();
+    _otpTimer?.cancel();
     super.dispose();
   }
 
@@ -106,17 +170,29 @@ class _AuthScreenState extends State<AuthScreen>
     }
   }
 
-  void _onVkAuth(AuthData data) {
-    final requestData = AuthRequest(
-      accessToken: data.token,
-      vkId: data.userID,
-      firstName: data.userData.firstName,
-      lastName: data.userData.lastName,
-    );
-
-    context.read<AuthBloc>().add(
-          LoginWithVKEvent(requestData),
-        );
+  Future<void> _onVkAuth(VkOAuth data) async {
+    try {
+      final profileRes = await _vkidController.getProfileInfo();
+      final profile = profileRes.result;
+      if (profile == null) {
+        var msg = "Profile info load error";
+        final err = profileRes.error?.vkErr;
+        if (err != null) {
+          msg += ": ${err.error} - ${err.description}";
+        }
+        _apiErrNotifier.value = msg;
+        return;
+      }
+      final requestData = AuthRequest(
+        accessToken: data.accessToken,
+        vkId: data.userId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+      );
+      context.read<AuthBloc>().add(LoginWithVKEvent(requestData));
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
   @override
@@ -126,12 +202,14 @@ class _AuthScreenState extends State<AuthScreen>
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthAuthenticated) {
+          _stopOtpTimer();
           CustomSnackbar.showSuccess(
             context: context,
             message: "Успешная авторизация!",
           );
           context.go('/home');
         } else if (state is OtpVerified) {
+          _stopOtpTimer();
           CustomSnackbar.showSuccess(
             context: context,
             message: "SMS код подтвержден!",
@@ -142,9 +220,10 @@ class _AuthScreenState extends State<AuthScreen>
           setState(() {
             _codeSent = true;
           });
+          _startOtpTimer();
           CustomSnackbar.showSuccess(
             context: context,
-            message: state.message,
+            message: "Смс отправлено на ваш номер телефона",
           );
         } else if (state is AuthFailure) {
           CustomSnackbar.showError(
@@ -154,7 +233,7 @@ class _AuthScreenState extends State<AuthScreen>
         } else if (state is OtpFailure) {
           CustomSnackbar.showError(
             context: context,
-            message: state.message,
+            message: "Ошибка",
           );
           // OTP ni tozalash
           _otpKey.currentState?.clear();
@@ -435,12 +514,88 @@ class _AuthScreenState extends State<AuthScreen>
           ),
           24.h,
 
+          // Timer va Resend tugmasi
+          Center(
+            child: Column(
+              children: [
+                if (!_canResendOtp) ...[
+                  Text(
+                    'Отправить код повторно через ${_formatTime(_remainingSeconds)}',
+                    style: TextStyle(
+                      color: ColorConstants.secondaryTextColor,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ] else ...[
+                  BlocBuilder<AuthBloc, AuthState>(
+                    builder: (context, state) {
+                      final isResending = state is OtpSending;
+
+                      return TextButton(
+                        onPressed: isResending
+                            ? null
+                            : () {
+                                _requestCode();
+                              },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isResending) ...[
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    ColorConstants.primaryColor,
+                                  ),
+                                ),
+                              ),
+                              8.w,
+                              Text(
+                                'Отправляем...',
+                                style: TextStyle(
+                                  color: ColorConstants.primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ] else ...[
+                              Icon(
+                                Icons.refresh,
+                                size: 18,
+                                color: ColorConstants.primaryColor,
+                              ),
+                              4.w,
+                              Text(
+                                'Отправить код повторно',
+                                style: TextStyle(
+                                  color: ColorConstants.primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          16.h,
+
           // Change number button
           Center(
             child: TextButton(
               onPressed: isLoading
                   ? null
                   : () {
+                      _stopOtpTimer();
                       setState(() {
                         _codeSent = false;
                       });
@@ -456,25 +611,6 @@ class _AuthScreenState extends State<AuthScreen>
               ),
             ),
           ),
-
-          // Resend OTP option
-          if (!isLoading) ...[
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  _requestCode();
-                },
-                child: Text(
-                  'Отправить код повторно',
-                  style: TextStyle(
-                    color: ColorConstants.primaryColor,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -499,6 +635,45 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
+  Future<void> _onPressedLogInButton() async {
+    _apiErrNotifier.value = "";
+    if (_authorizeUri == null) {
+      _generateAuthorizeLink();
+    }
+    final uri = _authorizeUri;
+    if (uri == null) {
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          callback(String code, String deviceId) async {
+            final authRes = await _vkidController.retrieveOAuthToken(
+              authorizationCode: code,
+              deviceId: deviceId,
+              codeVerifier: _codeVerifier,
+              state: uri.queryParameters["state"] ?? "",
+            );
+            final auth = authRes.result;
+
+            if (auth == null) {
+              var msg = "Retrieve OAuth token error";
+              final err = authRes.error?.vkErr;
+              if (err != null) {
+                msg += ": ${err.error} - ${err.description}";
+              }
+              _apiErrNotifier.value = msg;
+              return;
+            }
+            _onVkAuth(auth);
+          }
+
+          return OAuthScreenMobile(authUri: uri, authCallback: callback);
+        },
+      ),
+    );
+  }
+
   Widget _buildSocialAuth() {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
@@ -506,29 +681,30 @@ class _AuthScreenState extends State<AuthScreen>
 
         return AbsorbPointer(
           absorbing: isLoading,
-          child: Opacity(
-            opacity: isLoading ? 0.6 : 1.0,
-            child: SizedBox(
-              width: double.infinity,
-              child: OAuthWidget(
-                key: GlobalKey(),
-                oAuths: const {OAuth.vk},
-                authParams: UIAuthParamsBuilder()
-                    .withScopes(const {'email', 'phone'}).build(),
-                onAuth: (provider, data) {
-                  _onVkAuth(data);
-                },
-                onError: (provider, error) {
-                  CustomSnackbar.showError(
-                    context: context,
-                    message: 'Ошибка авторизации через ВКонтакте',
-                  );
-                },
-                buttonConfig: const OAuthButtonConfiguration(
-                  cornersStyle: OneTapCornersRounded(),
-                ),
-                theme: OAuthWidgetTheme.light,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ColorConstants.primaryColor, // VK rangi
+              minimumSize: Size(double.infinity, 40),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
+            ),
+            onPressed: () => _onPressedLogInButton(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/images/vk.svg',
+                  height: 24,
+                  width: 24,
+                  colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Войти через VK',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
             ),
           ),
         );

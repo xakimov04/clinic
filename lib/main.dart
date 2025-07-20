@@ -10,7 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NetworkService.initializeInterceptors();
   await init();
-
+  
   runApp(MyApp());
 }
 

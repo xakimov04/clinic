@@ -296,7 +296,8 @@ class _AppointmentsList extends StatelessWidget {
         return const _LoadingView();
       case AppointmentsViewState.error:
         return _ErrorView(
-          message: errorMessage ?? 'Неизвестная ошибка',
+          message: errorMessage ??
+              'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
           onRetry: onRetry,
         );
       case AppointmentsViewState.loaded:

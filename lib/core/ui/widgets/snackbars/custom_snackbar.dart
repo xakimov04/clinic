@@ -84,7 +84,7 @@ class CustomSnackbar {
         iconData = CupertinoIcons.exclamationmark_triangle;
         break;
       case SnackBarStyle.info:
-      backgroundColor = ColorConstants.infoColor;
+        backgroundColor = ColorConstants.infoColor;
         iconData = CupertinoIcons.info_circle;
         break;
     }
@@ -113,7 +113,7 @@ class CustomSnackbar {
                 borderRadius: BorderRadius.circular(10.0),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, 
+                    horizontal: 16.0,
                     vertical: 12.0,
                   ),
                   child: IntrinsicHeight(
@@ -175,7 +175,7 @@ class CustomSnackbar {
         entry.remove();
       }
     });
-    
+
     // Entry ni global o'zgaruvchida saqlash
     _lastOverlayEntry = entry;
   }
@@ -203,7 +203,7 @@ class CustomSnackbar {
   }) {
     // Joriy snackbar ni yopish
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // Stil va ranglarni aniqlash
     final Color backgroundColor;
     final Color textColor = Colors.white;
@@ -223,7 +223,7 @@ class CustomSnackbar {
         iconData = Icons.warning_amber_outlined;
         break;
       case SnackBarStyle.info:
-      backgroundColor = ColorConstants.infoColor;
+        backgroundColor = ColorConstants.infoColor;
         iconData = Icons.info_outline;
         break;
     }
@@ -238,9 +238,8 @@ class CustomSnackbar {
         borderRadius: BorderRadius.circular(8),
       ),
       duration: duration,
-      dismissDirection: dismissible 
-          ? DismissDirection.horizontal 
-          : DismissDirection.none,
+      dismissDirection:
+          dismissible ? DismissDirection.horizontal : DismissDirection.none,
       content: Row(
         children: [
           Icon(
@@ -362,10 +361,10 @@ class CustomSnackbar {
   }) {
     show(
       context: context,
-      message: 'Internet aloqasi yo\'q',
+      message: 'Нет подключения к интернету',
       style: SnackBarStyle.error,
       duration: const Duration(seconds: 5),
-      actionLabel: 'Qayta urinish',
+      actionLabel: 'Повторить',
       onActionTap: onRetry,
       forceMaterial: forceMaterial,
     );
@@ -374,7 +373,7 @@ class CustomSnackbar {
   /// Server xatosi
   static void showServerError({
     required BuildContext context,
-    String message = 'Server xatosi yuz berdi. Iltimos keyinroq qayta urining.',
+    String message = 'Произошла ошибка сервера. Пожалуйста, попробуйте позже.',
     VoidCallback? onRetry,
     bool forceMaterial = false,
   }) {
@@ -383,7 +382,7 @@ class CustomSnackbar {
       message: message,
       style: SnackBarStyle.error,
       duration: const Duration(seconds: 4),
-      actionLabel: onRetry != null ? 'Qayta urinish' : null,
+      actionLabel: onRetry != null ? 'Повторить' : null,
       onActionTap: onRetry,
       forceMaterial: forceMaterial,
     );

@@ -44,8 +44,6 @@ dependencies:
   crypto: ^3.0.6
   equatable: ^2.0.7
   connectivity_plus: ^6.1.4
-  flutter_login_vk: ^3.0.0
-  vkid_flutter_sdk: ^1.0.2
   device_info_plus: ^11.4.0
   shimmer: ^3.0.0
   skeletonizer: ^1.4.3
@@ -53,7 +51,14 @@ dependencies:
   cached_network_image: ^3.4.1
   intl: ^0.20.2
   flutter_cupertino_date_picker_fork: ^1.0.7
-  http: ^1.1.0
+  flutter_svg: ^2.2.0
+  vk_id: ^1.0.2
+  webview_flutter: ^4.13.0
+  flutter_cache_manager: ^3.4.1
+  path_provider: ^2.1.5
+  firebase_core: ^3.15.1
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +70,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  innim_lint: ^0.5.0+1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

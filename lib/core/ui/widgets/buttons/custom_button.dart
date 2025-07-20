@@ -71,27 +71,27 @@ class CustomButton extends StatefulWidget {
 class _CustomButtonState extends State<CustomButton> {
   bool _isPressed = false;
   late Timer? _debounceTimer;
-  
+
   @override
   void initState() {
     super.initState();
     _debounceTimer = null;
   }
-  
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
     super.dispose();
   }
-  
+
   void _handleTap() {
     // Agar buttonni ikkinchi marta juda tez bosilishini oldini olish
     if (_isPressed || (widget.disableOnLoading && widget.isLoading)) {
       return;
     }
-    
+
     setState(() => _isPressed = true);
-    
+
     // Debounce timer ishga tushirish
     _debounceTimer?.cancel();
     _debounceTimer = Timer(widget.debounceTime, () {
@@ -99,57 +99,64 @@ class _CustomButtonState extends State<CustomButton> {
         setState(() => _isPressed = false);
       }
     });
-    
+
     // Callback'ni chaqirish
     widget.onPressed();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Rang logikasi
-    final bgColor = widget.backgroundColor ?? 
-      (widget.isOutlined ? Colors.transparent : ColorConstants.primaryColor);
-    
-    final txtColor = widget.textColor ?? 
-      (widget.isOutlined ? ColorConstants.primaryColor : Colors.white);
-    
+    final bgColor = widget.backgroundColor ??
+        (widget.isOutlined ? Colors.transparent : ColorConstants.primaryColor);
+
+    final txtColor = widget.textColor ??
+        (widget.isOutlined ? ColorConstants.primaryColor : Colors.white);
+
     // Chegara logikasi
-    final border = widget.isOutlined 
-      ? BorderSide(color: ColorConstants.primaryColor, width: 1.5)
-      : BorderSide.none;
-    
+    final border = widget.isOutlined
+        ? BorderSide(color: ColorConstants.primaryColor, width: 1.5)
+        : BorderSide.none;
+
     // Loading indikator rangi
-    final loadingColor = widget.loadingIndicatorColor ?? 
-      (widget.isOutlined ? ColorConstants.primaryColor : Colors.white);
-    
+    final loadingColor = widget.loadingIndicatorColor ??
+        (widget.isOutlined ? ColorConstants.primaryColor : Colors.white);
+
     // Button Container
     return Container(
       height: widget.height,
       width: widget.fullWidth ? double.infinity : widget.width,
-      decoration: widget.boxShadow != null ? BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.radius),
-        boxShadow: [widget.boxShadow!],
-      ) : null,
+      decoration: widget.boxShadow != null
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.radius),
+              boxShadow: [widget.boxShadow!],
+            )
+          : null,
       child: ElevatedButton(
-        onPressed: (_isPressed || widget.isLoading && widget.disableOnLoading) ? null : _handleTap,
+        onPressed: (_isPressed || widget.isLoading && widget.disableOnLoading)
+            ? null
+            : _handleTap,
         onLongPress: widget.onLongPress,
         focusNode: widget.focusNode,
         autofocus: widget.autofocus,
         style: ElevatedButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: txtColor,
-          disabledBackgroundColor: widget.isOutlined 
-              ? Colors.transparent 
+          disabledBackgroundColor: widget.isOutlined
+              ? Colors.transparent
               : bgColor.withValues(alpha: 0.7),
           disabledForegroundColor: txtColor.withValues(alpha: 0.7),
           padding: widget.padding ?? const EdgeInsets.symmetric(horizontal: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(widget.radius),
             side: _isPressed || (widget.isLoading && widget.disableOnLoading)
-                ? (widget.isOutlined 
-                    ? BorderSide(color: ColorConstants.primaryColor.withValues(alpha: 0.7), width: 1.5)
+                ? (widget.isOutlined
+                    ? BorderSide(
+                        color:
+                            ColorConstants.primaryColor.withValues(alpha: 0.7),
+                        width: 1.5)
                     : BorderSide.none)
                 : border,
           ),
@@ -161,13 +168,13 @@ class _CustomButtonState extends State<CustomButton> {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: widget.isLoading
-            ? _buildLoadingWidget(loadingColor)
-            : _buildContentWidget(theme, txtColor),
+              ? _buildLoadingWidget(loadingColor)
+              : _buildContentWidget(theme, txtColor),
         ),
       ),
     );
   }
-  
+
   Widget _buildLoadingWidget(Color loadingColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -183,7 +190,7 @@ class _CustomButtonState extends State<CustomButton> {
         if (widget.showLoadingText) ...[
           const SizedBox(width: 12),
           Text(
-            widget.loadingText ?? 'Yuklanmoqda...',
+            widget.loadingText ?? 'Загрузка...',
             style: TextStyle(
               color: loadingColor,
               fontSize: widget.fontSize ?? 16,
@@ -194,7 +201,7 @@ class _CustomButtonState extends State<CustomButton> {
       ],
     );
   }
-  
+
   Widget _buildContentWidget(ThemeData theme, Color txtColor) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

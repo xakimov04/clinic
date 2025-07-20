@@ -19,6 +19,7 @@ import 'package:clinic/core/di/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:clinic/features/client/receptions/presentation/pages/receptions_screen.dart';
 
 class AppRouter {
   static final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -48,7 +49,7 @@ class AppRouter {
         // Auth screen
         GoRoute(
           path: RoutePaths.authScreen,
-          builder: (context, state) => const AuthScreen(),
+          builder: (context, state) => AuthScreen(),
         ),
         GoRoute(
           path: RoutePaths.doctorLogin,
@@ -86,7 +87,6 @@ class AppRouter {
             final chat = extra?['chat'] as ChatEntity?;
 
             if (chat == null) {
-              // Agar chat entity berilmagan bo'lsa, error page'ga yo'naltirish
               return const Scaffold(
                 body: Center(
                   child: Text('Chat topilmadi'),
@@ -119,12 +119,10 @@ class AppRouter {
               );
             }
 
-            return BlocProvider(
-              create: (context) => sl<ChatDetailBloc>(),
-              child: DoctorChatDetailScreen(chat: chat),
-            );
+            return DoctorChatDetailScreen(chat: chat);
           },
         ),
+
         GoRoute(
           path: RoutePaths.doctorDetail,
           builder: (context, state) {
@@ -245,19 +243,30 @@ class AppRouter {
                     child: ProfileScreen(),
                   ),
                 ),
+                GoRoute(
+                  path: RoutePaths.receptionsScreen,
+                  pageBuilder: (context, state) => const NoTransitionPage(
+                    child: ReceptionsScreen(),
+                  ),
+                ),
               ],
             ),
           ],
         ),
         GoRoute(
           path: RoutePaths.appointmentDetailScreen,
-          pageBuilder: (context, state) {
+          builder: (context, state) {
             final appointment = state.extra as Map<String, dynamic>?;
             final appointments =
-                appointment?['appointment'] as AppointmentModel;
-            return NoTransitionPage(
-              child: AppointmentDetailScreen(appointment: appointments),
-            );
+                appointment?['appointment'] as AppointmentModel?;
+            if (appointments == null) {
+              return Scaffold(
+                body: Center(
+                  child: Text('appointment topilmadi'),
+                ),
+              );
+            }
+            return AppointmentDetailScreen(appointment: appointments);
           },
         ),
         // Doctor main screen
@@ -273,9 +282,7 @@ class AppRouter {
                 GoRoute(
                   path: RoutePaths.doctorHome,
                   pageBuilder: (context, state) => NoTransitionPage(
-                    child: DoctorHomeScreen(
-                      repository: sl(),
-                    ),
+                    child: DoctorHomeScreen(),
                   ),
                 ),
               ],

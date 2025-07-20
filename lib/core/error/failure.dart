@@ -1,39 +1,58 @@
 import 'package:equatable/equatable.dart';
 
-/// Базовый класс для всех ошибок в приложении
+/// Ilovadagi barcha xatoliklar uchun asosiy abstract klass
 abstract class Failure extends Equatable {
   final String message;
+  final String code;
 
-  const Failure({required this.message});
+  const Failure({
+    required this.message,
+    this.code = '',
+  });
 
   @override
-  List<Object> get props => [message];
+  List<Object> get props => [message, code];
 
   @override
-  String toString() => '$runtimeType: $message';
+  String toString() => '$runtimeType: $message (code: $code)';
 }
 
-/// Ошибка сервера
+/// 🔥 Server bilan bog‘liq xatoliklar
 class ServerFailure extends Failure {
-  const ServerFailure({required super.message});
+  const ServerFailure({
+    super.message = 'Произошла ошибка сервера. Пожалуйста, попробуйте позже.',
+    super.code = 'SERVER_ERROR',
+  });
 }
 
-/// Ошибка кеширования
+/// 💾 Kesh (cache) bilan bog‘liq xatoliklar
 class CacheFailure extends Failure {
-  const CacheFailure({required super.message});
+  const CacheFailure({
+    super.message = 'Ошибка кеширования. Пожалуйста, попробуйте позже.',
+    super.code = 'CACHE_ERROR',
+  });
 }
 
-/// Ошибка сети
+/// 🌐 Internet yo‘qligi yoki tarmoq xatoliklari
 class NetworkFailure extends Failure {
-  const NetworkFailure({super.message = 'Отсутствует подключение к сети'});
+  const NetworkFailure({
+    super.message = 'Отсутствует подключение к сети',
+    super.code = 'NO_INTERNET',
+  });
 }
 
-/// Ошибка авторизации
+/// 🔐 Login yoki token xatoliklari
 class AuthFailure extends Failure {
-  const AuthFailure({required super.message});
+  const AuthFailure({
+    super.message = 'Ошибка авторизации. Проверьте данные и попробуйте снова.',
+    super.code = 'AUTH_ERROR',
+  });
 }
 
-/// Непредвиденная ошибка
+/// ❓ Oldindan kutilmagan, noma’lum xatoliklar
 class UnexpectedFailure extends Failure {
-  const UnexpectedFailure({super.message = 'Произошла непредвиденная ошибка'});
+  const UnexpectedFailure({
+    super.message = 'Произошла непредвиденная ошибка',
+    super.code = 'UNEXPECTED_ERROR',
+  });
 }

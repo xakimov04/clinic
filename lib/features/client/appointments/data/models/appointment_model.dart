@@ -269,17 +269,17 @@ extension AppointmentListExtension on List<AppointmentModel> {
     return where((appointment) => appointment.status == status).toList();
   }
 
-  /// Bugungi appointment lar
+  /// Приёмы на сегодня
   List<AppointmentModel> get todayAppointments {
     return where((appointment) => appointment.isToday).toList();
   }
 
-  /// Aktiv appointment lar (bekor qilinmagan va tugallanmagan)
+  /// Активные приёмы (не отменённые и не завершённые)
   List<AppointmentModel> get activeAppointments {
     return where((appointment) => appointment.status.isActive).toList();
   }
 
-  /// Sana bo'yicha tartiblash
+  /// Сортировка по дате
   List<AppointmentModel> sortByDate({bool ascending = true}) {
     final sorted = List<AppointmentModel>.from(this);
     sorted.sort((a, b) {
@@ -289,7 +289,7 @@ extension AppointmentListExtension on List<AppointmentModel> {
     return sorted;
   }
 
-  /// Doctor bo'yicha guruplash
+  /// Группировка по врачу
   Map<String, List<AppointmentModel>> groupByDoctor() {
     final Map<String, List<AppointmentModel>> grouped = {};
     for (final appointment in this) {

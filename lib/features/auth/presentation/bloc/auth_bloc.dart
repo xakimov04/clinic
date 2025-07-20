@@ -79,10 +79,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (otpResponse) {
         // Token ni saqlash
         localStorageService.setString(
-            StorageKeys.accesToken, otpResponse.token);
+            StorageKeys.accesToken, otpResponse.access);
+        localStorageService.setString(
+            StorageKeys.refreshToken, otpResponse.refresh);
         localStorageService.setBool(StorageKeys.isLoggedIn, true);
         localStorageService.setString(
             StorageKeys.userId, otpResponse.userId.toString());
+        localStorageService.setString(
+            StorageKeys.userRole, UserRole.client.name);
 
         emit(OtpVerified(otpResponse));
       },

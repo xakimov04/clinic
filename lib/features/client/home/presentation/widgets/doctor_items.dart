@@ -125,7 +125,7 @@ class _DoctorItemsState extends State<DoctorItems>
           ),
           8.h,
           Text(
-            message,
+            'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -208,21 +208,25 @@ class _DoctorItemsState extends State<DoctorItems>
     );
   }
 
+  // ASOSIY O'ZGARISH: Column orqali render qilish
   Widget _buildLoadedState(List<DoctorEntity> doctors) {
     if (doctors.isEmpty) {
       return _buildEmptyState();
     }
 
-    return ListView.separated(
+    // ListView.separated o'rniga Column ishlatamiz
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: doctors.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      separatorBuilder: (context, index) => 12.h,
-      itemBuilder: (context, index) {
-        final doctor = doctors[index];
-        return _buildAnimatedDoctorCard(doctor, index);
-      },
+      child: Column(
+        children: [
+          // Doktor kartalarini dinamik ravishda yaratish
+          for (int index = 0; index < doctors.length; index++) ...[
+            _buildAnimatedDoctorCard(doctors[index], index),
+            if (index < doctors.length - 1)
+              12.h, // Oxirgi elementdan keyin bo'shliq qo'ymaslik
+          ],
+        ],
+      ),
     );
   }
 

@@ -11,11 +11,11 @@ class ProfileEntities extends Equatable {
   final bool agreedToTerms;
   final bool biometricEnabled;
   final String userType;
-  final String name;
+  final String firstName;
+  final String lastName;
+  final String middleName;
   final String? avatar;
-  final String fullName;
 
-  // Doctor uchun qo'shimcha maydonlar
   final String? specialization;
   final bool? isAvailable;
   final String? medicalLicense;
@@ -31,9 +31,10 @@ class ProfileEntities extends Equatable {
     required this.agreedToTerms,
     required this.biometricEnabled,
     required this.userType,
-    required this.name,
+    required this.firstName,
+    required this.lastName,
+    required this.middleName,
     this.avatar,
-    required this.fullName,
     this.specialization,
     this.isAvailable,
     this.medicalLicense,
@@ -57,9 +58,10 @@ class ProfileEntities extends Equatable {
         agreedToTerms,
         biometricEnabled,
         userType,
-        name,
+        firstName,
+        lastName,
+        middleName,
         avatar,
-        fullName,
         specialization,
         isAvailable,
         medicalLicense,

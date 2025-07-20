@@ -1,4 +1,5 @@
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/ui/widgets/controls/russian_text_selection_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -114,14 +115,14 @@ class CustomTextField extends StatefulWidget {
     this.obscuringCharacter,
     this.boxShadow,
     this.toggleObscureText = false,
-  })  : assert(initialValue == null || controller == null, 
-          'Cannot provide both an initialValue and a controller'),
-        assert(maxLines == null || maxLines > 0, 
-          'maxLines must be null or greater than 0'),
-        assert(minLines == null || minLines > 0, 
-          'minLines must be null or greater than 0'),
-        assert(maxLength == null || maxLength > 0, 
-          'maxLength must be null or greater than 0'),
+  })  : assert(initialValue == null || controller == null,
+            'Cannot provide both an initialValue and a controller'),
+        assert(maxLines == null || maxLines > 0,
+            'maxLines must be null or greater than 0'),
+        assert(minLines == null || minLines > 0,
+            'minLines must be null or greater than 0'),
+        assert(maxLength == null || maxLength > 0,
+            'maxLength must be null or greater than 0'),
         assert(
           (maxLines == null) || (minLines == null) || (maxLines >= minLines),
           'maxLines cannot be smaller than minLines',
@@ -145,11 +146,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   void initState() {
     super.initState();
-    _controller = widget.controller ?? TextEditingController(text: widget.initialValue);
+    _controller =
+        widget.controller ?? TextEditingController(text: widget.initialValue);
     _focusNode = widget.focusNode ?? FocusNode();
     _obscureText = widget.obscureText;
     _hasText = _controller.text.isNotEmpty;
-    
+
     _controller.addListener(_handleTextChange);
     _focusNode.addListener(_handleFocusChange);
   }
@@ -157,22 +159,22 @@ class _CustomTextFieldState extends State<CustomTextField> {
   @override
   void didUpdateWidget(CustomTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (widget.controller != null && widget.controller != _controller) {
       _controller.removeListener(_handleTextChange);
       _controller = widget.controller!;
       _controller.addListener(_handleTextChange);
       _hasText = _controller.text.isNotEmpty;
     }
-    
+
     if (widget.focusNode != null && widget.focusNode != _focusNode) {
       _focusNode.removeListener(_handleFocusChange);
       _focusNode = widget.focusNode!;
       _focusNode.addListener(_handleFocusChange);
     }
 
-    if (widget.initialValue != null && 
-        widget.controller == null && 
+    if (widget.initialValue != null &&
+        widget.controller == null &&
         widget.initialValue != oldWidget.initialValue) {
       _controller.text = widget.initialValue!;
     }
@@ -185,13 +187,13 @@ class _CustomTextFieldState extends State<CustomTextField> {
     } else {
       _controller.removeListener(_handleTextChange);
     }
-    
+
     if (widget.focusNode == null) {
       _focusNode.dispose();
     } else {
       _focusNode.removeListener(_handleFocusChange);
     }
-    
+
     super.dispose();
   }
 
@@ -221,43 +223,53 @@ class _CustomTextFieldState extends State<CustomTextField> {
   }
 
   InputDecoration _buildInputDecoration() {
-    // Rang va stil sozlamalari
+    // Настройки цвета и стиля
     final Color fillColor = widget.fillColor ?? Colors.white;
-    final Color enabledBorderColor = widget.enabledBorderColor ?? ColorConstants.borderColor;
-    final Color focusedBorderColor = widget.focusedBorderColor ?? ColorConstants.primaryColor;
-    
+    final Color enabledBorderColor =
+        widget.enabledBorderColor ?? ColorConstants.borderColor;
+    final Color focusedBorderColor =
+        widget.focusedBorderColor ?? ColorConstants.primaryColor;
+
     return InputDecoration(
-      // Matn va label
+      // Текст и label
       labelText: widget.label,
       hintText: widget.hint,
       helperText: widget.helperText,
       errorText: widget.errorText,
       counterText: widget.showCounter ? null : '',
-      
-      // Stillar
-      labelStyle: widget.labelStyle ?? TextStyle(
-        color: _hasFocus ? focusedBorderColor : ColorConstants.secondaryTextColor,
-        fontSize: 14,
-      ),
-      hintStyle: widget.hintStyle ?? TextStyle(
-        color: ColorConstants.hintColor,
-        fontSize: 14,
-      ),
-      errorStyle: widget.errorStyle ?? const TextStyle(
-        color: ColorConstants.errorColor,
-        fontSize: 12,
-      ),
-      
-      // To'ldirish va kontur
+
+      // Стили
+      labelStyle: widget.labelStyle ??
+          TextStyle(
+            color: _hasFocus
+                ? focusedBorderColor
+                : ColorConstants.secondaryTextColor,
+            fontSize: 14,
+          ),
+      hintStyle: widget.hintStyle ??
+          TextStyle(
+            color: ColorConstants.hintColor,
+            fontSize: 14,
+          ),
+      errorStyle: widget.errorStyle ??
+          const TextStyle(
+            color: ColorConstants.errorColor,
+            fontSize: 12,
+          ),
+
+      // Заполнение и контур
       filled: true,
-      fillColor: widget.enabled ? fillColor : ColorConstants.disabledColor.withValues(alpha: 0.1),
+      fillColor: widget.enabled
+          ? fillColor
+          : ColorConstants.disabledColor.withValues(alpha: 0.1),
       isDense: widget.isDense,
-      contentPadding: widget.contentPadding ?? EdgeInsets.symmetric(
-        horizontal: 16, 
-        vertical: (widget.maxLines ?? 1) > 1 ? 16 : 14,
-      ),
-      
-      // Chegaralar
+      contentPadding: widget.contentPadding ??
+          EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: (widget.maxLines ?? 1) > 1 ? 16 : 14,
+          ),
+
+      // Границы
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(widget.borderRadius),
         borderSide: BorderSide(
@@ -300,8 +312,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
           width: 1,
         ),
       ),
-      
-      // Prefix/Suffix elementlari
+
+      // Основной контроллер и состояние
       prefixIcon: widget.prefixIcon,
       prefix: widget.prefix,
       suffixIcon: _buildSuffixIcon(),
@@ -319,25 +331,32 @@ class _CustomTextFieldState extends State<CustomTextField> {
             )
           : widget.suffixIcon;
     }
-    
+
     // Ko'rish/Yashirish buttoni
     if (widget.toggleObscureText && widget.obscureText) {
       return GestureDetector(
         onTap: _toggleObscureText,
         child: Icon(
-          _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          color: _hasFocus ? focusedBorderColor : ColorConstants.secondaryTextColor,
+          _obscureText
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
+          color: _hasFocus
+              ? focusedBorderColor
+              : ColorConstants.secondaryTextColor,
           size: 20,
         ),
       );
     }
-    
+
     // Tozalash buttoni
-    if (widget.showClearButton && _hasText && widget.enabled && !widget.readOnly) {
+    if (widget.showClearButton &&
+        _hasText &&
+        widget.enabled &&
+        !widget.readOnly) {
       return GestureDetector(
         onTap: _clearText,
         child: Tooltip(
-          message: widget.clearButtonTooltip ?? 'Tozalash',
+          message: widget.clearButtonTooltip ?? 'Очистить',
           child: const Icon(
             Icons.clear,
             color: ColorConstants.secondaryTextColor,
@@ -346,42 +365,46 @@ class _CustomTextFieldState extends State<CustomTextField> {
         ),
       );
     }
-    
+
     return null;
   }
 
-  Color get focusedBorderColor => 
+  Color get focusedBorderColor =>
       widget.focusedBorderColor ?? ColorConstants.primaryColor;
 
   @override
   Widget build(BuildContext context) {
     Theme.of(context);
-    
+
     Widget textField = TextFormField(
-      // Asosiy kontroller va holat
+      contextMenuBuilder: RussianContextMenu.build,
+      // Основной контроллер и состояние
       controller: _controller,
       focusNode: _focusNode,
-      
-      // Validator va form
-      autovalidateMode: widget.autovalidate 
-          ? AutovalidateMode.onUserInteraction 
+
+      // Валидатор и форма
+      autovalidateMode: widget.autovalidate
+          ? AutovalidateMode.onUserInteraction
           : AutovalidateMode.disabled,
       validator: widget.validator,
-      
-      // Matn sozlamalari
-      style: widget.style ?? TextStyle(
-        color: widget.enabled ? widget.textColor ?? ColorConstants.textColor : ColorConstants.secondaryTextColor,
-        fontSize: 16,
-      ),
+
+      // Настройки текста
+      style: widget.style ??
+          TextStyle(
+            color: widget.enabled
+                ? widget.textColor ?? ColorConstants.textColor
+                : ColorConstants.secondaryTextColor,
+            fontSize: 16,
+          ),
       textAlign: widget.textAlign,
       textDirection: widget.textDirection,
       textCapitalization: widget.textCapitalization,
-      
-      // Klaviatura sozlamalari
+
+      // Настройки клавиатуры
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
-      
-      // Ko'rinish va funksionallik
+
+      // Внешний вид и функциональность
       enabled: widget.enabled,
       readOnly: widget.readOnly,
       obscureText: _obscureText,
@@ -393,25 +416,25 @@ class _CustomTextFieldState extends State<CustomTextField> {
       expands: widget.expands,
       showCursor: widget.showCursor,
       cursorColor: widget.cursorColor ?? ColorConstants.primaryColor,
-      
-      // Tekst formatteri
+
+      // Форматтер текста
       inputFormatters: widget.inputFormatters,
-      
-      // Smart features
+
+      // Умные функции
       autocorrect: widget.autocorrect,
       enableSuggestions: widget.enableSuggestions,
-      
-      // Kallabeklar
+
+      // Колбэки
       onChanged: widget.onChanged,
       onEditingComplete: widget.onEditingComplete,
       onFieldSubmitted: widget.onSubmitted,
       onTap: widget.onTap,
-      
-      // Dekoratsiya
+
+      // Декорация
       decoration: _buildInputDecoration(),
     );
-    
-    // Soya qo'shish kerak bo'lsa
+
+    // Если нужно добавить тень
     if (widget.boxShadow != null) {
       return Container(
         decoration: BoxDecoration(
@@ -421,7 +444,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         child: textField,
       );
     }
-    
+
     return textField;
   }
 }

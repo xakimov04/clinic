@@ -1,6 +1,8 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/doctors/entities/doctor_entity.dart';
@@ -9,8 +11,9 @@ class DoctorCard extends StatelessWidget {
   const DoctorCard({
     super.key,
     required this.doctor,
+    this.heroKey = 'doctor_screen_',
   });
-
+  final String heroKey;
   final DoctorEntity doctor;
 
   @override
@@ -57,16 +60,20 @@ class DoctorCard extends StatelessWidget {
             child: Row(
               children: [
                 Hero(
-                  tag: 'doctor_screen_${doctor.hashCode}',
+                  tag: '$heroKey${doctor.hashCode}',
                   child: SizedBox(
                     width: 64,
                     height: 64,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(
-                        "assets/images/doctor.jpg",
-                        fit: BoxFit.cover,
-                      ),
+                      child: doctor.avatar.isEmpty
+                          ? SvgPicture.asset(
+                              "assets/images/avatar.svg",
+                              fit: BoxFit.cover,
+                            )
+                          : CacheImageWidget(
+                              imageUrl: doctor.avatar,
+                            ),
                     ),
                   ),
                 ),

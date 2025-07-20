@@ -27,6 +27,7 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
+  late ChatDetailBloc _chatDetailBloc;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -37,6 +38,7 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
   @override
   void initState() {
     super.initState();
+    _chatDetailBloc = context.read<ChatDetailBloc>();
     _initializeAnimations();
     _loadMessages();
     _setupScrollListener();
@@ -57,7 +59,7 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
   }
 
   void _loadMessages() {
-    context.read<ChatDetailBloc>().add(LoadMessagesEvent(widget.chat.id));
+    _chatDetailBloc.add(LoadMessagesEvent(widget.chat.id));
   }
 
   void _setupScrollListener() {
@@ -87,8 +89,8 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
     _messageFocusNode.dispose();
     _animationController.dispose();
 
-    // BLoC'dagi stream'ni tozalash
-    context.read<ChatDetailBloc>().disposeChat();
+    // Use the stored BLoC reference instead of context.read()
+    _chatDetailBloc.disposeChat();
     super.dispose();
   }
 
@@ -528,12 +530,12 @@ class _DoctorChatDetailScreenState extends State<DoctorChatDetailScreen>
     // Haptic feedback
     HapticFeedback.lightImpact();
 
-    context.read<ChatDetailBloc>().add(
-          SendMessageEvent(
-            chatId: widget.chat.id,
-            content: content,
-          ),
-        );
+    _chatDetailBloc.add(
+      SendMessageEvent(
+        chatId: widget.chat.id,
+        content: content,
+      ),
+    );
 
     _messageController.clear();
     _scrollToBottom();

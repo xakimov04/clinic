@@ -22,7 +22,7 @@ class NetworkService {
 
   // Singleton pattern
   static Dio get dio => _dio;
-  
+
   static void initializeInterceptors() {
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -45,6 +45,7 @@ class NetworkService {
         onError: (DioException e, handler) async {
           // Xatolikni qayta ishlash: API va tarmoq xatoliklari
           log('Error [${e.response?.statusCode}] => ${e.message}');
+
           if (e.response?.statusCode == 401) {
             // TokenManager orqali xatolikni hal qilish
             final response = await TokenManager.handle401Error(e, _dio);
@@ -88,13 +89,23 @@ class NetworkService {
   }
 
   // Xatoliklarni boshqarish
-  static Exception _handleError(DioException e) {
+  static DioException _handleError(DioException e) {
     if (e.response != null) {
-      // API javob xatoliklari
-      return Exception('API Error: ${e.response?.data}');
+      // API javobidagi xatolik
+      return DioException(
+        requestOptions: e.requestOptions,
+        response: e.response,
+        type: e.type,
+        error:
+            'Произошла ошибка при выполнении запроса. Пожалуйста, попробуйте позже.',
+      );
     } else {
-      // Tarmoq xatoliklari
-      return Exception('Network Error: ${e.message}');
+      // Tarmoq bilan bog‘liq xatolik
+      return DioException(
+        requestOptions: e.requestOptions,
+        type: DioExceptionType.unknown,
+        error: 'Отсутствует подключение к сети',
+      );
     }
   }
 }

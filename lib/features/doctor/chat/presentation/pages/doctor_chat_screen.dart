@@ -107,12 +107,25 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
   Widget _buildContent(ChatListState state) {
     if (state is ChatListLoading) {
       return _buildLoadingState();
-    } else if (state is ChatListLoaded || state is ChatListRefreshing) {
-      final chats = state is ChatListLoaded
-          ? state.chats
-          : (state as ChatListRefreshing).currentChats;
+    } else if (state is ChatListLoaded ||
+        state is ChatListRefreshing ||
+        state is ChatCreating) {
+      // Barcha holatlarda chatlarni olish
+      List<ChatEntity> chats = [];
+      bool isRefreshing = false;
+      bool isCreatingChat = false;
 
-      return _buildLoadedState(chats, state is ChatListRefreshing);
+      if (state is ChatListLoaded) {
+        chats = state.chats;
+      } else if (state is ChatListRefreshing) {
+        chats = state.currentChats;
+        isRefreshing = true;
+      } else if (state is ChatCreating) {
+        chats = state.currentChats;
+        isCreatingChat = true;
+      }
+
+      return _buildLoadedState(chats, isRefreshing, isCreatingChat);
     } else if (state is ChatListEmpty) {
       return _buildEmptyState(state.message);
     } else if (state is ChatListError) {
@@ -155,7 +168,8 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
     );
   }
 
-  Widget _buildLoadedState(List<ChatEntity> chats, bool isRefreshing) {
+  Widget _buildLoadedState(
+      List<ChatEntity> chats, bool isRefreshing, bool isCreatingChat) {
     // Doctor uchun chatlarni kategoriyalarga bo'lamiz
     final activeChats = chats.where((chat) => chat.hasUnreadMessages).toList();
     final regularChats =
@@ -185,6 +199,51 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
                 ...regularChats.asMap().entries.map((entry) {
                   return _buildAnimatedChatItem(entry.value, entry.key);
                 }),
+              ],
+
+              // Agar hech qanday chat yo'q bo'lsa
+              if (chats.isEmpty) ...[
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: ColorConstants.primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.people_outline_rounded,
+                            size: 40,
+                            color: ColorConstants.primaryColor,
+                          ),
+                        ),
+                        24.h,
+                        const Text(
+                          'Нет пациентов',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: ColorConstants.textColor,
+                          ),
+                        ),
+                        8.h,
+                        const Text(
+                          'Новые чаты появятся здесь',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: ColorConstants.secondaryTextColor,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -221,6 +280,53 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+
+        // Creating chat indicator
+        if (isCreatingChat)
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: ColorConstants.primaryColor,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ColorConstants.primaryColor.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Создаем чат...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -361,7 +467,10 @@ class _DoctorChatScreenState extends State<DoctorChatScreen>
       '/doctor-chat/${chat.id}',
       extra: {
         'chat': chat,
-        'userType': 'doctor',
+      },
+    ).then(
+      (value) {
+        context.read<ChatListBloc>().add( GetChatsListEventNotLoading());
       },
     );
   }

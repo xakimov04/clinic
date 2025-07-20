@@ -23,7 +23,8 @@ class ClinicsDataSourceImpl implements ClinicsDataSource {
       return Right(data);
     } catch (e) {
       return Left(ServerFailure(
-        message: e.toString(),
+        message:
+            'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
       ));
     }
   }
@@ -40,7 +41,8 @@ class ClinicsDataSourceImpl implements ClinicsDataSource {
       return Right(data);
     } catch (e) {
       return Left(ServerFailure(
-        message: e.toString(),
+        message:
+            'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
       ));
     }
   }

@@ -1,16 +1,19 @@
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/client/appointments/presentation/pages/appointment_booking_screen.dart';
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 
 class DoctorDetailScreen extends StatefulWidget {
   final DoctorEntity doctor;
-
+  final String heroKey;
   const DoctorDetailScreen({
     super.key,
     required this.doctor,
+    this.heroKey = 'doctor_screen_',
   });
 
   @override
@@ -351,11 +354,6 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen>
           value: widget.doctor.fullName,
         ),
         _buildContactItem(
-          icon: Icons.email,
-          title: 'Email адрес',
-          value: widget.doctor.email,
-        ),
-        _buildContactItem(
           icon: Icons.medical_services,
           title: 'Специализация',
           value: widget.doctor.specialization,
@@ -429,10 +427,14 @@ class _DoctorDetailScreenState extends State<DoctorDetailScreen>
         height: 80,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            "assets/images/doctor.jpg",
-            fit: BoxFit.cover,
-          ),
+          child: doctor.avatar.isEmpty
+              ? SvgPicture.asset(
+                  "assets/images/avatar.svg",
+                  fit: BoxFit.cover,
+                )
+              : CacheImageWidget(
+                  imageUrl: doctor.avatar,
+                ),
         ),
       ),
     );

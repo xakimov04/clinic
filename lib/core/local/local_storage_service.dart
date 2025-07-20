@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageService {
   static final LocalStorageService _instance = LocalStorageService._internal();
-  
+
   factory LocalStorageService() {
     return _instance;
   }
@@ -14,49 +14,49 @@ class LocalStorageService {
     return await SharedPreferences.getInstance();
   }
 
-  // Ma'lumotni olish
+  // Получение данных
   Future<String?> getString(String key) async {
     final prefs = await _getPrefs();
     return prefs.getString(key);
   }
 
-  // Ma'lumotni saqlash
+  // Сохранение данных
   Future<void> setString(String key, String value) async {
     final prefs = await _getPrefs();
     await prefs.setString(key, value);
   }
 
-  // Boolean ma'lumotni olish
+  // Получение булевого значения
   Future<bool?> getBool(String key) async {
     final prefs = await _getPrefs();
     return prefs.getBool(key);
   }
 
-  // Boolean ma'lumotni saqlash
+  // Сохранение булевого значения
   Future<void> setBool(String key, bool value) async {
     final prefs = await _getPrefs();
     await prefs.setBool(key, value);
   }
 
-  // Integer ma'lumotni olish
+  // Получение целого числа
   Future<int?> getInt(String key) async {
     final prefs = await _getPrefs();
     return prefs.getInt(key);
   }
 
-  // Integer ma'lumotni saqlash
+  // Сохранение целого числа
   Future<void> setInt(String key, int value) async {
     final prefs = await _getPrefs();
     await prefs.setInt(key, value);
   }
 
-  // Remove ma'lumot
+  // Удаление данных
   Future<void> remove(String key) async {
     final prefs = await _getPrefs();
     await prefs.remove(key);
   }
 
-  // All ma'lumotlarni tozalash
+  // Очистка всех данных
   Future<void> clear() async {
     final prefs = await _getPrefs();
     await prefs.clear();

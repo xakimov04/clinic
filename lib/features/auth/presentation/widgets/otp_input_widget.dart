@@ -1,5 +1,6 @@
 // lib/features/auth/presentation/widgets/otp_input_widget.dart
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/ui/widgets/controls/russian_text_selection_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -164,8 +165,7 @@ class OtpInputWidgetState extends State<OtpInputWidget>
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
-      width: 50,
-      height: 55,
+      width: 55,
       decoration: BoxDecoration(
         color: widget.isLoading
             ? Colors.grey.shade100
@@ -198,6 +198,7 @@ class OtpInputWidgetState extends State<OtpInputWidget>
           return KeyEventResult.ignored;
         },
         child: TextFormField(
+          contextMenuBuilder: RussianContextMenu.build,
           controller: _controllers[index],
           focusNode: _focusNodes[index],
           enabled: !widget.isLoading,
@@ -214,13 +215,10 @@ class OtpInputWidgetState extends State<OtpInputWidget>
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(1),
           ],
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            errorBorder: InputBorder.none,
-            disabledBorder: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
+          decoration: InputDecoration(
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.transparent)),
             counterText: '',
           ),
           onChanged: (value) => _onChanged(value, index),

@@ -8,7 +8,6 @@ enum AppointmentBookingStatus {
   success,
   error,
 }
-
 class AppointmentBookingState extends Equatable {
   final AppointmentBookingStatus status;
   final DoctorEntity? doctor;
@@ -16,10 +15,12 @@ class AppointmentBookingState extends Equatable {
   final ClinicEntity? selectedClinic;
   final List<DoctorEntity> clinicDoctors;
   final DateTime? selectedDate;
-  final String? selectedTime;
+  final TimeOfDay? selectedTime;
   final List<TimeSlotEntity> timeSlots;
   final String notes;
+  final String specialization;
   final String? errorMessage;
+  final String? errorCode;
   final AppointmentEntity? createdAppointment;
 
   const AppointmentBookingState({
@@ -32,7 +33,9 @@ class AppointmentBookingState extends Equatable {
     this.selectedTime,
     this.timeSlots = const [],
     this.notes = '',
+    this.specialization = '',
     this.errorMessage,
+    this.errorCode,
     this.createdAppointment,
   });
 
@@ -49,10 +52,12 @@ class AppointmentBookingState extends Equatable {
     ClinicEntity? selectedClinic,
     List<DoctorEntity>? clinicDoctors,
     DateTime? selectedDate,
-    String? selectedTime,
+    TimeOfDay? selectedTime,
     List<TimeSlotEntity>? timeSlots,
     String? notes,
+    String? specialization,
     String? errorMessage,
+    String? errorCode,
     AppointmentEntity? createdAppointment,
   }) {
     return AppointmentBookingState(
@@ -65,7 +70,9 @@ class AppointmentBookingState extends Equatable {
       selectedTime: selectedTime ?? this.selectedTime,
       timeSlots: timeSlots ?? this.timeSlots,
       notes: notes ?? this.notes,
+      specialization: specialization ?? this.specialization,
       errorMessage: errorMessage ?? this.errorMessage,
+      errorCode: errorCode ?? this.errorCode,
       createdAppointment: createdAppointment ?? this.createdAppointment,
     );
   }
@@ -81,7 +88,9 @@ class AppointmentBookingState extends Equatable {
         selectedTime,
         timeSlots,
         notes,
+        specialization,
         errorMessage,
+        errorCode,
         createdAppointment,
       ];
 }

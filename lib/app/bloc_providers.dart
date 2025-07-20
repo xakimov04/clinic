@@ -1,12 +1,15 @@
 import 'package:clinic/core/di/injection_container.dart';
 import 'package:clinic/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_bloc.dart';
 import 'package:clinic/features/client/appointments/presentation/bloc/appointment_booking/appointment_booking_bloc.dart';
+import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart';
 import 'package:clinic/features/client/chat/presentation/bloc/chat_list/chat_list_bloc.dart';
 import 'package:clinic/features/client/home/presentation/bloc/clinics/clinics_bloc.dart';
 import 'package:clinic/features/client/home/presentation/bloc/clinics_doctor/clinics_doctors_bloc.dart';
 import 'package:clinic/features/client/home/presentation/bloc/doctor/doctor_bloc.dart';
 import 'package:clinic/features/client/home/presentation/bloc/illness/illness_bloc.dart';
 import 'package:clinic/features/client/news/presentation/bloc/news_bloc.dart';
+import 'package:clinic/features/client/receptions/presentation/bloc/reception_bloc.dart';
 import 'package:clinic/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,7 +20,10 @@ final List<BlocProvider> appBlocProviders = [
   BlocProvider<IllnessBloc>(create: (_) => sl<IllnessBloc>()),
   BlocProvider<ClinicsBloc>(create: (_) => sl<ClinicsBloc>()),
   BlocProvider<ChatListBloc>(create: (_) => sl<ChatListBloc>()),
+  BlocProvider<ChatDetailBloc>(create: (_) => sl<ChatDetailBloc>()),
   BlocProvider<ClinicsDoctorsBloc>(create: (_) => sl<ClinicsDoctorsBloc>()),
   BlocProvider<NewsBloc>(create: (_) => sl<NewsBloc>()..add(GetNewsEvent())),
   BlocProvider<AppointmentBookingBloc>(create: (_) => sl<AppointmentBookingBloc>()),
+  BlocProvider<AppointmentBloc>(create: (_) => sl<AppointmentBloc>()),
+  BlocProvider<ReceptionBloc>(create: (_) => sl<ReceptionBloc>()),
 ];

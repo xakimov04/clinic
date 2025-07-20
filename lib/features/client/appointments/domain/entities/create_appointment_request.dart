@@ -1,26 +1,35 @@
+import 'package:flutter/material.dart';
+
 class CreateAppointmentRequest {
-  final int doctorId;
-  final int clinicId;
+  final String specialization;
   final DateTime date;
-  final String time;
-  final String notes;
+  final TimeOfDay timeBegin;
+  final String employeeId;
+  final String clinicId;
+  final String comment;
 
   const CreateAppointmentRequest({
-    required this.doctorId,
-    required this.clinicId,
+    required this.specialization,
     required this.date,
-    required this.time,
-    this.notes = '',
+    required this.timeBegin,
+    required this.employeeId,
+    required this.clinicId,
+    this.comment = '',
   });
 
   Map<String, dynamic> toJson() {
+    final combinedDateTime =
+        DateTime(1, 1, 1, timeBegin.hour, timeBegin.minute);
+    final isoString = combinedDateTime.toIso8601String();
+    final trimmedIsoString = isoString.replaceFirst(RegExp(r'\.000$'), '');
+
     return {
-      'doctor': doctorId,
-      'clinic': clinicId,
-      'date':
-          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      'time': time,
-      'notes': notes,
+      'specialization': specialization,
+      'date': '${date.toIso8601String().split('T')[0]}T00:00:00',
+      'time_begin': trimmedIsoString,
+      'employee_id': employeeId,
+      'clinic_id': clinicId,
+      'comment': comment,
     };
   }
 }

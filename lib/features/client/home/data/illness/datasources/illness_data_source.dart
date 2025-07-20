@@ -16,14 +16,15 @@ class IllnessDataSourceImpl implements IllnessDataSource {
   Future<Either<Failure, List<IllnessModel>>> getAllIllnesses() async {
     try {
       final response = await networkManager.fetchData(
-        url: 'illness/',
+        url: 'specializations/',
       );
       final data =
           (response as List).map((e) => IllnessModel.fromJson(e)).toList();
       return Right(data);
     } catch (e) {
       return Left(ServerFailure(
-        message: e.toString(),
+        message:
+            'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
       ));
     }
   }
@@ -32,13 +33,14 @@ class IllnessDataSourceImpl implements IllnessDataSource {
   Future<Either<Failure, IllnessModel>> getIllnessDetails(int id) async {
     try {
       final response = await networkManager.fetchData(
-        url: 'illness/$id',
+        url: 'specializations/$id',
       );
       final data = IllnessModel.fromJson(response);
       return Right(data);
     } catch (e) {
       return Left(ServerFailure(
-        message: e.toString(),
+        message:
+            'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
       ));
     }
   }

@@ -97,25 +97,6 @@ class _ChatScreenState extends State<ChatScreen>
                   color: ColorConstants.textColor,
                 ),
               ),
-              if (state is ChatListLoaded && state.hasUnreadMessages) ...[
-                2.h,
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: ColorConstants.primaryColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${state.totalUnreadCount} новых',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
             ],
           );
         },
@@ -357,6 +338,10 @@ class _ChatScreenState extends State<ChatScreen>
       '/chat/${chat.id}',
       extra: {
         'chat': chat,
+      },
+    ).then(
+      (value) {
+        context.read<ChatListBloc>().add(GetChatsListEventNotLoading());
       },
     );
   }

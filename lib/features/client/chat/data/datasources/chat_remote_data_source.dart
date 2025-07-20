@@ -5,7 +5,7 @@ import 'package:clinic/features/client/chat/data/models/chat_model.dart';
 
 abstract class ChatRemoteDataSource {
   Future<Either<Failure, List<ChatModel>>> getChats();
-  Future<Either<Failure, void>> createChats(String patientId);
+  Future<Either<Failure, ChatModel>> createChats(String patientId);
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
@@ -27,21 +27,23 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       return Right(chats);
     } catch (e) {
-      return Left(
-          ServerFailure(message: 'Чаты загрузить не удалось: ${e.toString()}'));
+      return Left(ServerFailure(
+          message:
+              'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.'));
     }
   }
 
   @override
-  Future<Either<Failure, void>> createChats(String patientId) async {
+  Future<Either<Failure, ChatModel>> createChats(String patientId) async {
     try {
-      await networkManager
+      final response = await networkManager
           .postData(url: 'chats/create/', data: {"patient_id": patientId});
-
-      return Right(null);
+      final data = ChatModel.fromJson(response);
+      return Right(data);
     } catch (e) {
-      return Left(
-          ServerFailure(message: 'Чаты загрузить не удалось: ${e.toString()}'));
+      return Left(ServerFailure(
+          message:
+              'Произошла ошибка при создании чата. Пожалуйста, попробуйте позже.'));
     }
   }
 }

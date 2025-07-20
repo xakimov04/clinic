@@ -22,20 +22,20 @@ class _IllnessCategoriesState extends State<IllnessCategories>
   final ScrollController _scrollController = ScrollController();
   final Map<int, bool> _visibleItems = {};
 
-  // Animatsiya yaratilganmi?
+  // Создана ли анимация?
   bool _animationsCreated = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Asosiy animatsiya kontrolleri
+    // Основной контроллер анимации
     _mainController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
 
-    // Scroll listener qo'shish
+    // Добавление scroll listener
     _scrollController.addListener(_checkVisibleItems);
   }
 
@@ -47,10 +47,10 @@ class _IllnessCategoriesState extends State<IllnessCategories>
     super.dispose();
   }
 
-  // Scroll paytida ko'rinadigan elementlarni aniqlash
+  // При прокрутке определяем видимые элементы
   void _checkVisibleItems() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Bu animatsiyalarni refresh qilish uchun
+      // Для обновления анимаций
       if (mounted) {
         setState(() {});
       }
@@ -75,12 +75,12 @@ class _IllnessCategoriesState extends State<IllnessCategories>
         ),
         16.h,
         BlocBuilder<IllnessBloc, IllnessState>(
-           buildWhen: (previous, current) {
+          buildWhen: (previous, current) {
             return current is IllnessLoading ||
-                   current is IllnessLoaded ||
-                   current is IllnessEmpty ||
-                   current is IllnessError ||
-                   current is IllnessInitial;
+                current is IllnessLoaded ||
+                current is IllnessEmpty ||
+                current is IllnessError ||
+                current is IllnessInitial;
           },
           builder: (context, state) {
             if (state is IllnessError) {
@@ -135,26 +135,26 @@ class _IllnessCategoriesState extends State<IllnessCategories>
 
     // Boshlang'ich animatsiya (loading tugagandan keyin)
     if (_mainController.isAnimating || _mainController.value < 1.0) {
-      // Har bir karta uchun o'z kechikishi
+      // Для каждой карты своя задержка
       final startDelay = index * 0.1;
       final visibleDuration = 0.6; // Animatsiya davomiyligi
 
       return AnimatedBuilder(
         animation: _mainController,
         builder: (context, child) {
-          // Karta uchun progress hisoblash
+          // Прогресс для карты
           final progress = _mainController.value;
 
-          // Kechikishni hisobga olgan holda kartalar animatsiyasi
+          // Анимация для каждой карты с учётом задержки
           var individualProgress = (progress - startDelay) / visibleDuration;
           individualProgress = individualProgress.clamp(0.0, 1.0);
 
-          // Karta animatsiyalari
+          // Анимация для невидимых карт сохраняем место
           if (individualProgress <= 0) {
             return const SizedBox(width: 120); // Ko'rinmas joy saqlash
           }
 
-          // 3D transformatsiyalar
+          // 3D трансформации
           final scale = 0.7 + (0.3 * individualProgress);
           final opacity = individualProgress;
           final angle = (1.0 - individualProgress) * 0.5; // radians
@@ -176,29 +176,28 @@ class _IllnessCategoriesState extends State<IllnessCategories>
         },
       );
     }
-    // Scroll animatsiyasi (kartalar orqadan kelishi)
+    // Анимация прокрутки (карты появляются справа)
     else {
-      // ScrollController dan foydalanib, card pozitsiyasini aniqlash
+      // Определяем позицию карты с помощью ScrollController
       final itemPosition = index * (120 + 12); // card width + margin
       final screenPosition =
           _scrollController.hasClients ? _scrollController.offset : 0.0;
 
-      // Ekranning o'ng tomonida qancha masofada?
+      // На каком расстоянии от правого края экрана?
       final rightEdge = MediaQuery.of(context).size.width;
       final visibleRight = itemPosition - screenPosition;
 
-      // Karta ekranning o'ng chekkasidan ko'rinadimi?
+      // Карта появляется с правого края экрана?
       final isAppearingOnScreen =
           visibleRight >= rightEdge - 120 && visibleRight <= rightEdge + 20;
 
-      // Agar ekranning o'ng chekkasidan paydo bo'layotgan bo'lsa
+      // Если появляется, рассчитываем прогресс (от 0.0 до 1.0)
       if (isAppearingOnScreen) {
-        // Qancha masofada ekanligini hisoblash (0.0 dan 1.0 gacha)
+        // 3D параметры эффекта
         final appearProgress =
             (rightEdge + 20 - visibleRight) / 140; // 120 + 20 (extra margin)
         final normalizedProgress = appearProgress.clamp(0.0, 1.0);
 
-        // 3D effekt parametrlari
         final angle =
             (1.0 - normalizedProgress) * 0.5; // Y o'qi bo'yicha aylanish
         final scale = 0.8 + (0.2 * normalizedProgress); // Masshtab
@@ -217,7 +216,7 @@ class _IllnessCategoriesState extends State<IllnessCategories>
         );
       }
 
-      // Normal holatdagi karta
+      // Обычная карта
       return card;
     }
   }

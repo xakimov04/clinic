@@ -4,23 +4,15 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:8.2.1"
+        classpath "com.android.tools.build:gradle:8.1.0"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.20"
     }
 }
 
-// Barcha modul va sub‑project uchun repozitoriyalar
 allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url "https://androidx.dev/storage/compose-compiler/repository/" }
-        // VK ID SDK repo
-        maven { url "https://artifactory-external.vkpartner.ru/artifactory/vkid-sdk-android/" }
-        // Compose dev repo
-        maven { url "https://maven.pkg.jetbrains.space/public/p/compose/dev" }
-        maven { url "https://jitpack.io" }
-        maven { url "https://plugins.gradle.org/m2/" }
     }
 }
 

@@ -9,6 +9,8 @@ class MessageEntity extends Equatable {
   final int senderId;
   final String senderName;
   final MessageSenderType senderType;
+  final bool isTemporary;  // Yangi property
+  final bool isSending;    // Yangi property
 
   const MessageEntity({
     required this.id,
@@ -18,6 +20,8 @@ class MessageEntity extends Equatable {
     required this.senderId,
     required this.senderName,
     required this.senderType,
+    this.isTemporary = false,
+    this.isSending = false,
   });
 
   @override
@@ -29,6 +33,8 @@ class MessageEntity extends Equatable {
         senderId,
         senderName,
         senderType,
+        isTemporary,
+        isSending,
       ];
 
   // Helper metodlar
@@ -60,7 +66,7 @@ class MessageEntity extends Equatable {
     return messageDate == today;
   }
 
-  // Copy with method
+  // Yangilangan copyWith method
   MessageEntity copyWith({
     int? id,
     String? content,
@@ -69,6 +75,8 @@ class MessageEntity extends Equatable {
     int? senderId,
     String? senderName,
     MessageSenderType? senderType,
+    bool? isTemporary,
+    bool? isSending,
   }) {
     return MessageEntity(
       id: id ?? this.id,
@@ -78,6 +86,8 @@ class MessageEntity extends Equatable {
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
       senderType: senderType ?? this.senderType,
+      isTemporary: isTemporary ?? this.isTemporary,
+      isSending: isSending ?? this.isSending,
     );
   }
 }

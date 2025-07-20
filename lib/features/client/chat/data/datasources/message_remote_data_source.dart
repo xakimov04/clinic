@@ -39,8 +39,8 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       return Right(messages);
     } catch (e) {
       return Left(ServerFailure(
-        message: 'Сообщения загрузить не удалось: ${e.toString()}',
-      ));
+          message:
+              'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.'));
     }
   }
 
@@ -63,8 +63,8 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
       return Right(message);
     } catch (e) {
       return Left(ServerFailure(
-        message: 'Сообщение отправить не удалось: ${e.toString()}',
-      ));
+          message:
+              'Произошла ошибка при отправке сообщения. Пожалуйста, попробуйте позже.'));
     }
   }
 
@@ -109,8 +109,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
 
     final result = await getMessages(chatId);
     result.fold(
-      (failure) {
-      },
+      (failure) {},
       (messages) {
         if (!_messageStreams[chatId]!.isClosed) {
           _messageStreams[chatId]!.add(messages);

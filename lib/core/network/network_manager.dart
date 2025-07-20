@@ -13,16 +13,12 @@ class NetworkManager {
     Map<String, dynamic>? queryParameters,
     bool useAuthorization = false,
   }) async {
-    try {
-      final response = await requestHandler.get<T>(
-        url: url,
-        queryParameters: queryParameters,
-        useAuthorization: useAuthorization,
-      );
-      return response.data; // Olingan natijani qaytarish
-    } catch (e) {
-      throw Exception('Error while fetching data: $e');
-    }
+    final response = await requestHandler.get<T>(
+      url: url,
+      queryParameters: queryParameters,
+      useAuthorization: useAuthorization,
+    );
+    return response.data; // Olingan natijani qaytarish
   }
 
   // Dinamik postData: POST request
@@ -32,17 +28,13 @@ class NetworkManager {
     Map<String, dynamic>? queryParameters,
     bool useAuthorization = false,
   }) async {
-    try {
-      final response = await requestHandler.post<T>(
-        url: url,
-        data: data,
-        queryParameters: queryParameters,
-        useAuthorization: useAuthorization,
-      );
-      return response.data; // Olingan natijani qaytarish
-    } catch (e) {
-      throw Exception('Error while posting data: $e');
-    }
+    final response = await requestHandler.post<T>(
+      url: url,
+      data: data,
+      queryParameters: queryParameters,
+      useAuthorization: useAuthorization,
+    );
+    return response.data; // Olingan natijani qaytarish
   }
 
   // Dinamik putData: PUT request
@@ -52,17 +44,13 @@ class NetworkManager {
     Map<String, dynamic>? queryParameters,
     bool useAuthorization = false,
   }) async {
-    try {
-      final response = await requestHandler.put<T>(
-        url: url,
-        data: data,
-        queryParameters: queryParameters,
-        useAuthorization: useAuthorization,
-      );
-      return response.data; // Olingan natijani qaytarish
-    } catch (e) {
-      throw Exception('Error while updating data: $e');
-    }
+    final response = await requestHandler.put<T>(
+      url: url,
+      data: data,
+      queryParameters: queryParameters,
+      useAuthorization: useAuthorization,
+    );
+    return response.data; // Olingan natijani qaytarish
   }
 
   // Dinamik deleteData: DELETE request
@@ -71,15 +59,11 @@ class NetworkManager {
     Map<String, dynamic>? queryParameters,
     bool useAuthorization = false,
   }) async {
-    try {
-      final response = await requestHandler.delete<T>(
-        url: url,
-        queryParameters: queryParameters,
-        useAuthorization: useAuthorization,
-      );
-      return response.data; // Olingan natijani qaytarish
-    } catch (e) {
-      throw Exception('Error while deleting data: $e');
-    }
+    final response = await requestHandler.delete<T>(
+      url: url,
+      queryParameters: queryParameters,
+      useAuthorization: useAuthorization,
+    );
+    return response.data; // Olingan natijani qaytarish
   }
 }

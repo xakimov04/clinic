@@ -69,3 +69,10 @@ final class ChatCreated extends ChatListState {
   @override
   List<Object> get props => [chat];
 }
+
+final class ChatCreatedSuccessfully extends ChatListState {
+  final ChatEntity chatEntity;
+  const ChatCreatedSuccessfully(this.chatEntity);
+  @override
+  List<Object> get props => [chatEntity];
+}
