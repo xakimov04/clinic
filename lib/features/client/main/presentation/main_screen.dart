@@ -52,19 +52,15 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Tab tanlash logikasi
   void _onTap(int index) {
-    // Agar bir xil tab bosilsa yoki animatsiya ketayotgan bo'lsa, hech narsa qilmaymiz
     if (index == widget.navigationShell.currentIndex || _isAnimating) return;
 
     setState(() {
       _isAnimating = true;
     });
 
-    // Animatsiyani boshlaymiz
     _animationController.forward(from: 0.0);
 
-    // Animatsiya boshlanganidan keyin sahifani almashtiramiz
     Future.delayed(Duration(milliseconds: 100), () {
       widget.navigationShell.goBranch(
         index,

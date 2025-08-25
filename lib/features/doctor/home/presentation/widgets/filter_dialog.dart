@@ -106,7 +106,6 @@ class FilterDialogState extends State<FilterDialog> {
     if (digitsOnly.startsWith('7') && digitsOnly.length >= 1) {
       return _formatRussianPhone(digitsOnly);
     } else if (digitsOnly.length >= 10) {
-      // Agar 7 bilan boshlanmasa, +7 qo'shib berish
       return _formatRussianPhone('7$digitsOnly');
     }
 
@@ -165,7 +164,6 @@ class FilterDialogState extends State<FilterDialog> {
             top: false,
             child: Column(
               children: [
-                // Header with action buttons
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   decoration: BoxDecoration(
@@ -207,7 +205,6 @@ class FilterDialogState extends State<FilterDialog> {
                     ],
                   ),
                 ),
-                // Date picker
                 Expanded(
                   child: CupertinoDatePicker(
                     mode: CupertinoDatePickerMode.date,
@@ -249,7 +246,6 @@ class FilterDialogState extends State<FilterDialog> {
     if (displayDate.trim().isEmpty) return '';
 
     try {
-      // "25 января 2024 г." formatini parse qilish
       final parts = displayDate.trim().replaceAll(' г.', '').split(' ');
       if (parts.length >= 3) {
         final day = int.parse(parts[0]);
@@ -272,7 +268,7 @@ class FilterDialogState extends State<FilterDialog> {
       _birthDateController.clear();
       _firstNameController.clear();
       _lastNameController.clear();
-      _phoneController.text = '+7 '; // +7 ni saqlash
+      _phoneController.text = '+7 ';
     });
   }
 
@@ -280,17 +276,16 @@ class FilterDialogState extends State<FilterDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 650),
-        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(),
-            const SizedBox(height: 20),
-            _buildFilterFields(),
-            const SizedBox(height: 24),
+            Flexible(
+              child: _buildFilterFields(),
+            ),
             _buildActionButtons(),
           ],
         ),
@@ -299,134 +294,108 @@ class FilterDialogState extends State<FilterDialog> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      children: [
-        const Icon(
-          Icons.filter_list,
-          color: ColorConstants.primaryColor,
-          size: 24,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 20, 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
         ),
-        const SizedBox(width: 8),
-        const Text(
-          'Фильтры поиска',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.grey.shade200,
+            width: 1,
           ),
         ),
-        const Spacer(),
-        IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close),
-          iconSize: 20,
-          splashRadius: 20,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFilterFields() {
-    return Flexible(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildDateField(
-              controller: _createdAtController,
-              label: 'Дата создания записи',
-              hint: 'Выберите дату',
-              icon: Icons.calendar_today,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: ColorConstants.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(height: 16),
-            _buildDateField(
-              controller: _birthDateController,
-              label: 'Дата рождения пациента',
-              hint: 'Выберите дату',
-              icon: Icons.cake,
+            child: const Icon(
+              Icons.tune,
+              color: ColorConstants.primaryColor,
+              size: 20,
             ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _firstNameController,
-              label: 'Имя пациента',
-              hint: 'Введите имя',
-              icon: Icons.person,
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Фильтры поиска',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _lastNameController,
-              label: 'Фамилия пациента',
-              hint: 'Введите фамилию',
-              icon: Icons.person_outline,
+          ),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: Colors.grey.shade600,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            _buildPhoneField(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDateField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+  Widget _buildFilterFields() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Column(
+        children: [
+          _buildFormField(
+            controller: _createdAtController,
+            label: 'Дата создания записи',
+            hint: 'Выберите дату создания',
+            isDateField: true,
           ),
-        ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          readOnly: true,
-          onTap: () => _selectDate(controller),
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, size: 20, color: Colors.grey[600]),
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]),
-                    onPressed: () => setState(() => controller.clear()),
-                    splashRadius: 15,
-                  )
-                : Icon(Icons.touch_app, size: 20, color: Colors.grey[600]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: ColorConstants.primaryColor),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
-            hintStyle: TextStyle(color: Colors.grey[500]),
+          const SizedBox(height: 20),
+          _buildFormField(
+            controller: _birthDateController,
+            label: 'Дата рождения пациента',
+            hint: 'Выберите дату рождения',
+            isDateField: true,
           ),
-          style: const TextStyle(fontSize: 14),
-        ),
-      ],
+          const SizedBox(height: 20),
+          _buildFormField(
+            controller: _firstNameController,
+            label: 'Имя пациента',
+            hint: 'Введите имя',
+          ),
+          const SizedBox(height: 20),
+          _buildFormField(
+            controller: _lastNameController,
+            label: 'Фамилия пациента',
+            hint: 'Введите фамилию',
+          ),
+          const SizedBox(height: 20),
+          _buildPhoneField(),
+        ],
+      ),
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildFormField({
     required TextEditingController controller,
     required String label,
     required String hint,
-    required IconData icon,
+    bool isDateField = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,42 +406,88 @@ class FilterDialogState extends State<FilterDialog> {
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
+            letterSpacing: 0.1,
           ),
         ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, size: 20, color: Colors.grey[600]),
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]),
-                    onPressed: () => setState(() => controller.clear()),
-                    splashRadius: 15,
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: ColorConstants.primaryColor),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
-            hintStyle: TextStyle(color: Colors.grey[500]),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          style: const TextStyle(fontSize: 14),
-          onChanged: (value) => setState(() {}),
+          child: TextField(
+            controller: controller,
+            readOnly: isDateField,
+            onTap: isDateField ? () => _selectDate(controller) : null,
+            textCapitalization: isDateField
+                ? TextCapitalization.none
+                : TextCapitalization.words,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w400,
+                fontSize: 15,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: controller.text.isNotEmpty
+                  ? Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => setState(() => controller.clear()),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.clear,
+                            size: 18,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ),
+                    )
+                  : isDateField
+                      ? Container(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.calendar_today_outlined,
+                            size: 18,
+                            color: Colors.grey.shade500,
+                          ),
+                        )
+                      : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                    color: ColorConstants.primaryColor, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            onChanged: isDateField ? null : (value) => setState(() {}),
+          ),
         ),
       ],
     );
@@ -488,88 +503,182 @@ class FilterDialogState extends State<FilterDialog> {
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: Colors.black87,
+            letterSpacing: 0.1,
           ),
         ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[\d\s\+]')),
-            _RussianPhoneFormatter(),
-          ],
-          decoration: InputDecoration(
-            hintText: '+7 XXX XXX XX XX',
-            prefixIcon: Icon(Icons.phone, size: 20, color: Colors.grey[600]),
-            suffixIcon: _phoneController.text.length > 3
-                ? IconButton(
-                    icon: Icon(Icons.clear, size: 18, color: Colors.grey[600]),
-                    onPressed: () =>
-                        setState(() => _phoneController.text = '+7 '),
-                    splashRadius: 15,
-                  )
-                : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: ColorConstants.primaryColor),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
-            ),
-            hintStyle: TextStyle(color: Colors.grey[500]),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          style: const TextStyle(fontSize: 14),
-          onChanged: (value) => setState(() {}),
+          child: TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d\s\+]')),
+              _RussianPhoneFormatter(),
+            ],
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: '+7 XXX XXX XX XX',
+              hintStyle: TextStyle(
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w400,
+                fontSize: 15,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: _phoneController.text.length > 3
+                  ? Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () =>
+                            setState(() => _phoneController.text = '+7 '),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          child: Icon(
+                            Icons.clear,
+                            size: 18,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.phone_outlined,
+                        size: 18,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                    color: ColorConstants.primaryColor, width: 2),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            onChanged: (value) => setState(() {}),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _clearAllFilters,
-            icon: const Icon(Icons.clear_all, size: 18),
-            label: const Text('Очистить всё'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              side: BorderSide(color: Colors.grey[300]!),
-              foregroundColor: Colors.black87,
-            ),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+        border: Border(
+          top: BorderSide(
+            color: Colors.grey.shade200,
+            width: 1,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _applyFilters,
-            icon: const Icon(Icons.check, size: 18),
-            label: const Text('Применить'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorConstants.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _clearAllFilters,
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Center(
+                    child: Text(
+                      'Очистить всё',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    ColorConstants.primaryColor,
+                    ColorConstants.primaryColor.withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: ColorConstants.primaryColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _applyFilters,
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Center(
+                    child: Text(
+                      'Применить',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -583,7 +692,6 @@ class _RussianPhoneFormatter extends TextInputFormatter {
   ) {
     final text = newValue.text;
 
-    // Bo'sh bo'lsa +7 ni o'rnatish
     if (text.isEmpty) {
       return const TextEditingValue(
         text: '+7 ',
@@ -591,7 +699,6 @@ class _RussianPhoneFormatter extends TextInputFormatter {
       );
     }
 
-    // +7 ni o'chirishga ruxsat bermaslik
     if (!text.startsWith('+7')) {
       return const TextEditingValue(
         text: '+7 ',
@@ -599,15 +706,12 @@ class _RussianPhoneFormatter extends TextInputFormatter {
       );
     }
 
-    // Faqat raqamlarni ajratib olish (+7 dan keyin)
     String digitsOnly = text.substring(2).replaceAll(RegExp(r'[^\d]'), '');
 
-    // 10 ta raqamdan ko'p kiritmaslik
     if (digitsOnly.length > 10) {
       digitsOnly = digitsOnly.substring(0, 10);
     }
 
-    // Formatlash
     String formattedText = '+7';
     if (digitsOnly.isNotEmpty) {
       formattedText +=

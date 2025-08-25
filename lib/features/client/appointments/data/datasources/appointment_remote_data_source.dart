@@ -55,22 +55,11 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
     AppointmentFilters? filters,
   }) async {
     try {
-      String url = 'appointments/';
-
-      // Filtrlarni query parametr sifatida qo'shish
-      if (filters != null) {
-        final queryParams = filters.toQueryParams();
-        if (queryParams.isNotEmpty) {
-          final queryString = queryParams.entries
-              .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-              .join('&');
-          url = '$url?$queryString';
-        }
-      }
+      String url = 'employees-client/';
 
       final response = await networkManager.fetchData(url: url);
 
-      final List<dynamic> data = response is List ? response : response.data;
+      final List<dynamic> data = response['data'];
       final appointments =
           data.map((json) => AppointmentModel.fromJson(json)).toList();
       return Right(appointments);

@@ -79,6 +79,7 @@ class AuthRemoteSourceImpl implements AuthRemoteSource {
         data: params.toJson(),
       );
       final data = DoctorLoginResponseModel.fromJson(response);
+
       return Right(data);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

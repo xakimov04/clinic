@@ -1,5 +1,4 @@
 import 'package:clinic/core/routes/routes.dart';
-import 'package:clinic/features/client/appointments/data/models/appointment_model.dart';
 import 'package:clinic/features/client/chat/domain/entities/chat_entity.dart';
 import 'package:clinic/features/client/chat/presentation/bloc/chat_detail/chat_detail_bloc.dart';
 import 'package:clinic/features/client/chat/presentation/pages/chat_detail_screen.dart';
@@ -10,6 +9,7 @@ import 'package:clinic/features/client/home/presentation/pages/doctor_detail_scr
 import 'package:clinic/features/client/home/presentation/pages/illness_details_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_detail_screen.dart';
 import 'package:clinic/features/doctor/chat/presentation/pages/doctor_chat_screen.dart';
+import 'package:clinic/features/doctor/home/domain/entity/doctor_appointment_entity.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/appointment_detail_screen.dart';
 import 'package:clinic/features/doctor/home/presentation/pages/doctor_home_screen.dart';
 import 'package:clinic/features/doctor/main/pages/doctor_main_screen.dart';
@@ -167,10 +167,14 @@ class AppRouter {
           builder: (context, state) {
             final extra = state.extra as Map<String, dynamic>?;
             final user = extra?['user'];
+            final isFromBooking = extra?['isFromBooking'] as bool? ?? false;
 
             return BlocProvider.value(
               value: sl<ProfileBloc>(),
-              child: ProfileDetailsScreen(user: user),
+              child: ProfileDetailsScreen(
+                user: user,
+                isFromBooking: isFromBooking,
+              ),
             );
           },
         ),
@@ -207,19 +211,22 @@ class AppRouter {
               ],
             ),
 
-            // Appointments branch
+            // router.dart
             StatefulShellBranch(
               navigatorKey: _patientAppointmentsNavigatorKey,
               routes: [
                 GoRoute(
                   path: RoutePaths.appointmentsScreen,
-                  pageBuilder: (context, state) => NoTransitionPage(
-                    child: AppointmentsScreen(repository: sl()),
-                  ),
+                  pageBuilder: (context, state) {
+                    return NoTransitionPage(
+                      child: AppointmentsScreen(
+                        key: UniqueKey(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
-
             // Chat branch
             StatefulShellBranch(
               navigatorKey: _patientChatNavigatorKey,
@@ -258,7 +265,7 @@ class AppRouter {
           builder: (context, state) {
             final appointment = state.extra as Map<String, dynamic>?;
             final appointments =
-                appointment?['appointment'] as AppointmentModel?;
+                appointment?['appointment'] as DoctorAppointmentEntity?;
             if (appointments == null) {
               return Scaffold(
                 body: Center(

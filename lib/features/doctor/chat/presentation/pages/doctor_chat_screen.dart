@@ -629,14 +629,7 @@ class _DoctorChatListItem extends StatelessWidget {
     return Row(
       children: [
         // Doctor tomonidan yuborilgan xabar uchun icon
-        if (!lastMessage.isFromCurrentUser) ...[
-          Icon(
-            Icons.reply_rounded,
-            size: 14,
-            color: ColorConstants.primaryColor,
-          ),
-          4.w,
-        ],
+       
         Expanded(
           child: Text(
             lastMessage.displayContent,

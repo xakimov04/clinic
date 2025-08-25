@@ -5,6 +5,7 @@ import 'package:clinic/core/di/export/di_export.dart';
 import 'package:clinic/core/di/injection_container.dart';
 import 'package:clinic/core/role_management/role_manager.dart';
 import 'package:clinic/core/routes/routes.dart';
+import 'package:clinic/core/service/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,6 +27,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    sendFcmTokenToServer();
     _setupAnimations();
     _startAnimations();
   }
@@ -81,6 +83,24 @@ class _SplashScreenState extends State<SplashScreen>
                 ? RoutePaths.doctorHome
                 : RoutePaths.homeScreen
         : RoutePaths.authScreen);
+  }
+
+  Future<void> sendFcmTokenToServer() async {
+    final token = await FCMService.getToken();
+
+    if (token != null && token.isNotEmpty) {
+      final response = await sl<NetworkManager>().postData(
+        url: 'device-token/',
+        data: {
+          "token": token,
+          "device_type": "android",
+        },
+      );
+
+      print("✅ FCM token yuborildi: $response");
+    } else {
+      print("❌ FCM token topilmadi");
+    }
   }
 
   @override

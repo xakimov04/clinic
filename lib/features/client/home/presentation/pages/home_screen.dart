@@ -5,6 +5,7 @@ import 'package:clinic/features/client/home/presentation/bloc/illness/illness_bl
 import 'package:clinic/features/client/home/presentation/widgets/clinics_item.dart';
 import 'package:clinic/features/client/home/presentation/widgets/doctor_items.dart';
 import 'package:clinic/features/client/home/presentation/widgets/illness_categories.dart';
+import 'package:clinic/features/client/notification/notification_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -107,7 +108,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icons.notifications_outlined,
                 color: ColorConstants.primaryColor,
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationPage(),
+                    ));
+              },
             ),
           ),
         ],
@@ -130,10 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             // Kasalliklar kategoriyalari
             SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: IllnessCategories(),
-              ),
+              child: IllnessCategories(),
             ),
 
             // Custom Tab Bar

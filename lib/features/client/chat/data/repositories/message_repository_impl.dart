@@ -38,4 +38,9 @@ class MessageRepositoryImpl implements MessageRepository {
   Stream<List<MessageEntity>> getMessagesStream(int chatId) {
     return remoteDataSource.getMessagesStream(chatId);
   }
+
+  @override
+  void disposeStream(int chatId) {
+    remoteDataSource.disposeStream(chatId);
+  }
 }

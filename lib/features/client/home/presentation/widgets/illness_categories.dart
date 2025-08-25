@@ -1,59 +1,98 @@
 import 'package:clinic/core/constants/color_constants.dart';
-import 'package:clinic/core/extension/spacing_extension.dart';
-import 'package:clinic/features/client/home/domain/illness/entities/illness_entities.dart';
 import 'package:clinic/features/client/home/presentation/bloc/illness/illness_bloc.dart';
 import 'package:clinic/features/client/home/presentation/widgets/category_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class IllnessCategories extends StatefulWidget {
-  const IllnessCategories({
-    super.key,
-  });
+  const IllnessCategories({super.key});
 
   @override
   State<IllnessCategories> createState() => _IllnessCategoriesState();
 }
 
-class _IllnessCategoriesState extends State<IllnessCategories>
-    with TickerProviderStateMixin {
-  late AnimationController _mainController;
+class _IllnessCategoriesState extends State<IllnessCategories> {
+  bool _isExpanded = false;
 
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, bool> _visibleItems = {};
-
-  // Создана ли анимация?
-  bool _animationsCreated = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Основной контроллер анимации
-    _mainController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    // Добавление scroll listener
-    _scrollController.addListener(_checkVisibleItems);
+  // Responsive grid parametrlari
+  int get _crossAxisCount {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 1200) return 6; // Katta desktop
+    if (screenWidth > 900) return 5; // Desktop/planshet landscape
+    if (screenWidth > 600) return 4; // Planshet portrait
+    return 3; // Telefon
   }
 
-  @override
-  void dispose() {
-    _mainController.dispose();
-    _scrollController.removeListener(_checkVisibleItems);
-    _scrollController.dispose();
-    super.dispose();
+  int get _initialRowCount => 1;
+  int get _itemsToShowInitially => _crossAxisCount * _initialRowCount;
+
+  // Responsive styling
+  EdgeInsetsGeometry get _containerPadding {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 1200) return const EdgeInsets.symmetric(horizontal: 32);
+    if (screenWidth > 900) return const EdgeInsets.symmetric(horizontal: 24);
+    return const EdgeInsets.symmetric(horizontal: 16);
   }
 
-  // При прокрутке определяем видимые элементы
-  void _checkVisibleItems() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Для обновления анимаций
-      if (mounted) {
-        setState(() {});
-      }
+  double get _crossAxisSpacing {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 16;
+    if (screenWidth > 600) return 12;
+    return 10;
+  }
+
+  double get _mainAxisSpacing {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 16;
+    if (screenWidth > 600) return 12;
+    return 10;
+  }
+
+  double get _childAspectRatio {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 1200) return 1.05; // Katta ekranlarda biroz uzunroq
+    if (screenWidth > 900) return 1.0; // Desktop/planshet landscape
+    if (screenWidth > 600) return 0.95; // Planshet portrait
+    return 0.9; // Telefon
+  }
+
+  double get _titleFontSize {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 20;
+    if (screenWidth > 600) return 18;
+    return 17;
+  }
+
+  double get _verticalSpacing {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 24;
+    if (screenWidth > 600) return 20;
+    return 16;
+  }
+
+  // Loading card parametrlari
+  double get _loadingCardRadius {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 16;
+    return 12;
+  }
+
+  double get _loadingCardPadding {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 16;
+    return 12;
+  }
+
+  double get _loadingIconSize {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth > 900) return 48;
+    if (screenWidth > 600) return 44;
+    return 40;
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
     });
   }
 
@@ -62,18 +101,36 @@ class _IllnessCategoriesState extends State<IllnessCategories>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header section
         Padding(
-          padding: const EdgeInsets.only(left: 16, top: 16),
-          child: const Text(
-            'Категории заболеваний',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: ColorConstants.textColor,
-            ),
+          padding: _containerPadding.add(const EdgeInsets.only(top: 16)),
+          child: Row(
+            children: [
+              Text(
+                'Категории заболеваний',
+                style: TextStyle(
+                  fontSize: _titleFontSize,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.textColor,
+                ),
+              ),
+              const Spacer(),
+              BlocBuilder<IllnessBloc, IllnessState>(
+                buildWhen: (previous, current) => current is IllnessLoaded,
+                builder: (context, state) {
+                  if (state is IllnessLoaded &&
+                      state.illnesses.length > _itemsToShowInitially) {
+                    return _buildShowMoreButton();
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
           ),
         ),
-        16.h,
+        SizedBox(height: _verticalSpacing),
+
+        // Content section
         BlocBuilder<IllnessBloc, IllnessState>(
           buildWhen: (previous, current) {
             return current is IllnessLoading ||
@@ -83,141 +140,179 @@ class _IllnessCategoriesState extends State<IllnessCategories>
                 current is IllnessInitial;
           },
           builder: (context, state) {
-            if (state is IllnessError) {
-              return SizedBox();
-            } else if (state is IllnessEmpty) {
-              return SizedBox();
-            } else if (state is IllnessLoaded) {
-              if (!_animationsCreated) {
-                _animationsCreated = true;
+            if (state is IllnessError || state is IllnessEmpty) {
+              return const SizedBox.shrink();
+            }
 
-                _mainController.forward();
-              }
+            if (state is IllnessLoading || state is IllnessInitial) {
+              return _buildLoadingState();
+            }
+
+            if (state is IllnessLoaded) {
               return _buildLoadedState(state);
             }
-            return SizedBox(
-              height: 140,
-            );
+
+            return _buildLoadingState();
           },
         ),
       ],
     );
   }
 
-  Widget _buildLoadedState(IllnessLoaded state) {
-    return SizedBox(
-      height: 140,
-      child: ListView.builder(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: state.illnesses.length,
-        itemBuilder: (context, index) {
-          // Elementni visible qilib belgilash
-          _visibleItems[index] = true;
-
-          return Padding(
-            padding: EdgeInsets.only(
-                right: index == state.illnesses.length - 1 ? 0 : 12),
-            child: _buildCardWithAnimation(
-                state.illnesses[index], index, state.illnesses.length),
-          );
-        },
+  Widget _buildLoadingState() {
+    return Padding(
+      padding: _containerPadding,
+      child: SizedBox(
+        height: _calculateGridHeight(_itemsToShowInitially),
+        child: GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _crossAxisCount,
+            childAspectRatio: _childAspectRatio,
+            crossAxisSpacing: _crossAxisSpacing,
+            mainAxisSpacing: _mainAxisSpacing,
+          ),
+          itemCount: _itemsToShowInitially,
+          itemBuilder: (context, index) => _buildLoadingCard(),
+        ),
       ),
     );
   }
 
-  // Animatsiyali kartani yaratish
-  Widget _buildCardWithAnimation(
-      IllnessEntities illness, int index, int totalCount) {
-    // Kartaning asosiy content
-    final card = CategoryCard(illness: illness);
-
-    // Boshlang'ich animatsiya (loading tugagandan keyin)
-    if (_mainController.isAnimating || _mainController.value < 1.0) {
-      // Для каждой карты своя задержка
-      final startDelay = index * 0.1;
-      final visibleDuration = 0.6; // Animatsiya davomiyligi
-
-      return AnimatedBuilder(
-        animation: _mainController,
-        builder: (context, child) {
-          // Прогресс для карты
-          final progress = _mainController.value;
-
-          // Анимация для каждой карты с учётом задержки
-          var individualProgress = (progress - startDelay) / visibleDuration;
-          individualProgress = individualProgress.clamp(0.0, 1.0);
-
-          // Анимация для невидимых карт сохраняем место
-          if (individualProgress <= 0) {
-            return const SizedBox(width: 120); // Ko'rinmas joy saqlash
-          }
-
-          // 3D трансформации
-          final scale = 0.7 + (0.3 * individualProgress);
-          final opacity = individualProgress;
-          final angle = (1.0 - individualProgress) * 0.5; // radians
-
-          return Transform.translate(
-            offset: Offset(120 * (1 - individualProgress), 0),
-            child: Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.001) // Perspektiva
-                ..rotateY(angle) // Y o'qi bo'yicha aylanish
-                ..scale(scale),
-              alignment: Alignment.centerRight,
-              child: Opacity(
-                opacity: opacity,
-                child: card,
+  Widget _buildLoadingCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(_loadingCardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(_loadingCardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon placeholder
+            Container(
+              width: _loadingIconSize,
+              height: _loadingIconSize,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-          );
-        },
-      );
-    }
-    // Анимация прокрутки (карты появляются справа)
-    else {
-      // Определяем позицию карты с помощью ScrollController
-      final itemPosition = index * (120 + 12); // card width + margin
-      final screenPosition =
-          _scrollController.hasClients ? _scrollController.offset : 0.0;
+            const Spacer(),
 
-      // На каком расстоянии от правого края экрана?
-      final rightEdge = MediaQuery.of(context).size.width;
-      final visibleRight = itemPosition - screenPosition;
+            // Title placeholder
+            Container(
+              width: double.infinity,
+              height: _loadingIconSize * 0.3,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            SizedBox(height: _loadingCardPadding * 0.5),
 
-      // Карта появляется с правого края экрана?
-      final isAppearingOnScreen =
-          visibleRight >= rightEdge - 120 && visibleRight <= rightEdge + 20;
+            // Subtitle placeholder
+            Container(
+              width: _loadingIconSize * 1.5,
+              height: _loadingIconSize * 0.2,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-      // Если появляется, рассчитываем прогресс (от 0.0 до 1.0)
-      if (isAppearingOnScreen) {
-        // 3D параметры эффекта
-        final appearProgress =
-            (rightEdge + 20 - visibleRight) / 140; // 120 + 20 (extra margin)
-        final normalizedProgress = appearProgress.clamp(0.0, 1.0);
+  Widget _buildLoadedState(IllnessLoaded state) {
+    final itemCount = state.illnesses.length;
+    final visibleItemCount =
+        _isExpanded ? itemCount : _itemsToShowInitially.clamp(0, itemCount);
 
-        final angle =
-            (1.0 - normalizedProgress) * 0.5; // Y o'qi bo'yicha aylanish
-        final scale = 0.8 + (0.2 * normalizedProgress); // Masshtab
-        final offset = 40 * (1.0 - normalizedProgress); // O'ngdan surilish
-
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: Transform(
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001) // Perspektiva
-              ..rotateY(angle) // Y o'qi bo'yicha aylanish
-              ..scale(scale),
-            alignment: Alignment.centerRight,
-            child: card,
+    return Padding(
+      padding: _containerPadding,
+      child: SizedBox(
+        height: _calculateGridHeight(visibleItemCount),
+        child: GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _crossAxisCount,
+            childAspectRatio: _childAspectRatio,
+            crossAxisSpacing: _crossAxisSpacing,
+            mainAxisSpacing: _mainAxisSpacing,
           ),
-        );
-      }
+          itemCount: visibleItemCount,
+          itemBuilder: (context, index) {
+            return CategoryCard(illness: state.illnesses[index]);
+          },
+        ),
+      ),
+    );
+  }
 
-      // Обычная карта
-      return card;
-    }
+  Widget _buildShowMoreButton() {
+    final buttonPadding = MediaQuery.of(context).size.width > 600 ? 12.0 : 8.0;
+    final iconSize = MediaQuery.of(context).size.width > 600 ? 24.0 : 20.0;
+
+    return InkWell(
+      onTap: _toggleExpanded,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: buttonPadding,
+          vertical: buttonPadding * 0.5,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _isExpanded ? 'Скрыть' : 'Показать все',
+              style: const TextStyle(
+                color: ColorConstants.primaryColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              color: ColorConstants.primaryColor,
+              size: iconSize,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _calculateGridHeight(int itemCount) {
+    if (itemCount <= 0) return 0;
+
+    final rowCount = (itemCount / _crossAxisCount).ceil();
+    final itemHeight = _getItemHeight();
+
+    return (rowCount * itemHeight) + ((rowCount - 1) * _mainAxisSpacing);
+  }
+
+  double _getItemHeight() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final containerPaddingHorizontal = _containerPadding.horizontal;
+    final totalSpacing = (_crossAxisCount - 1) * _crossAxisSpacing;
+
+    final availableWidth =
+        screenWidth - containerPaddingHorizontal - totalSpacing;
+    final itemWidth = availableWidth / _crossAxisCount;
+
+    return itemWidth / _childAspectRatio;
   }
 }

@@ -1,13 +1,13 @@
 part of 'chat_detail_bloc.dart';
 
-sealed class ChatDetailEvent extends Equatable {
+abstract class ChatDetailEvent extends Equatable {
   const ChatDetailEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
-final class LoadMessagesEvent extends ChatDetailEvent {
+class LoadMessagesEvent extends ChatDetailEvent {
   final int chatId;
 
   const LoadMessagesEvent(this.chatId);
@@ -16,20 +16,22 @@ final class LoadMessagesEvent extends ChatDetailEvent {
   List<Object> get props => [chatId];
 }
 
-final class SendMessageEvent extends ChatDetailEvent {
+class SendMessageEvent extends ChatDetailEvent {
   final int chatId;
   final String content;
+  final File? file; // Yangi parameter
 
   const SendMessageEvent({
     required this.chatId,
     required this.content,
+    this.file,
   });
 
   @override
-  List<Object> get props => [chatId, content];
+  List<Object?> get props => [chatId, content, file];
 }
 
-final class MessagesUpdatedEvent extends ChatDetailEvent {
+class MessagesUpdatedEvent extends ChatDetailEvent {
   final List<MessageEntity> messages;
 
   const MessagesUpdatedEvent(this.messages);

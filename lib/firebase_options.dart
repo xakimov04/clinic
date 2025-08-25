@@ -65,4 +65,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'clinics-51ebb.firebasestorage.app',
     iosBundleId: 'ru.clinic.app',
   );
+
 }

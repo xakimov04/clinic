@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:clinic/features/client/chat/domain/entities/message_model.dart';
 import 'package:clinic/features/client/chat/domain/entities/send_message_request.dart';
-import 'package:clinic/features/client/chat/domain/repositories/message_repository.dart';
 import 'package:clinic/features/client/chat/domain/usecases/get_messages_stream_usecase.dart';
 import 'package:clinic/features/client/chat/domain/usecases/get_messages_usecase.dart';
 import 'package:clinic/features/client/chat/domain/usecases/send_message_usecase.dart';
@@ -16,7 +16,6 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
   final GetMessagesUsecase getMessagesUsecase;
   final SendMessageUsecase sendMessageUsecase;
   final GetMessagesStreamUsecase getMessagesStreamUsecase;
-  final MessageRepository messageRepository;
 
   StreamSubscription<List<MessageEntity>>? _messagesSubscription;
   int? _currentChatId;
@@ -25,7 +24,6 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
     required this.getMessagesUsecase,
     required this.sendMessageUsecase,
     required this.getMessagesStreamUsecase,
-    required this.messageRepository,
   }) : super(ChatDetailInitial()) {
     on<LoadMessagesEvent>(_onLoadMessages);
     on<SendMessageEvent>(_onSendMessage);
@@ -36,36 +34,19 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
     LoadMessagesEvent event,
     Emitter<ChatDetailState> emit,
   ) async {
+    if (_currentChatId == event.chatId && state is ChatDetailLoaded) {
+      return; // Allaqachon yuklangan
+    }
+
     emit(ChatDetailLoading());
+
     _currentChatId = event.chatId;
 
-    // Avvalgi subscription'ni bekor qilish
+    // Stream'ni boshqarish
     await _messagesSubscription?.cancel();
-
-    try {
-      // Stream'ni boshlash
-      _messagesSubscription = getMessagesStreamUsecase(event.chatId).listen(
-        (messages) {
-          add(MessagesUpdatedEvent(messages));
-        },
-        onError: (error) {
-          add(MessagesUpdatedEvent([]));
-        },
-      );
-
-      // Dastlabki ma'lumotlarni yuklash
-      final result =
-          await getMessagesUsecase(GetMessagesParams(chatId: event.chatId));
-
-      result.fold(
-        (failure) => emit(ChatDetailError(failure.message)),
-        (messages) {
-          emit(ChatDetailLoaded(messages: messages));
-        },
-      );
-    } catch (e) {
-      emit(ChatDetailError('Ошибка загрузки сообщений: ${e.toString()}'));
-    }
+    _messagesSubscription = getMessagesStreamUsecase(event.chatId).listen(
+      (messages) => add(MessagesUpdatedEvent(messages)),
+    );
   }
 
   Future<void> _onSendMessage(
@@ -76,19 +57,38 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
 
     final currentState = state as ChatDetailLoaded;
 
+    // Validatsiya
+    if (event.content.trim().isEmpty && event.file == null) {
+      emit(MessageSendError('Xabar matni yoki fayl bo\'lishi kerak'));
+      return;
+    }
+
+    // File size validation (10MB)
+    if (event.file != null) {
+      final fileSize = await event.file!.length();
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (fileSize > maxSize) {
+        emit(MessageSendError('Fayl hajmi 10MB dan oshmasligi kerak'));
+        return;
+      }
+    }
+
     // Yuborish holatini ko'rsatish
     emit(currentState.copyWith(isSendingMessage: true));
 
-    
-    // Optimistic update - darhol UI'ga qo'shish
+    // Optimistic update
     final tempMessage = MessageEntity(
-      id: -DateTime.now().millisecondsSinceEpoch, 
+      id: -DateTime.now().millisecondsSinceEpoch,
       content: event.content,
       timestamp: DateTime.now(),
       isRead: true,
       senderId: 0, // Current user ID
       senderName: 'Siz',
       senderType: MessageSenderType.patient,
+      file: event.file?.path, // Local path for preview
+      isTemporary: true,
+      isSending: true,
     );
 
     final optimisticMessages = [...currentState.messages, tempMessage];
@@ -100,12 +100,15 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
     // Backend'ga yuborish
     final result = await sendMessageUsecase(SendMessageParams(
       chatId: event.chatId,
-      request: SendMessageRequest(content: event.content),
+      request: SendMessageRequest(
+        content: event.content,
+        file: event.file,
+      ),
     ));
 
     result.fold(
       (failure) {
-        // Xatolik bo'lsa, optimistic update'ni bekor qilish
+        // Optimistic update'ni bekor qilish
         emit(ChatDetailLoaded(
           messages: currentState.messages,
           isSendingMessage: false,
@@ -137,15 +140,11 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
   @override
   Future<void> close() async {
     await _messagesSubscription?.cancel();
-    return super.close();
-  }
-
-  // Chat yopilganda stream'ni tozalash
-  void disposeChat() {
-    _messagesSubscription?.cancel();
+    _messagesSubscription = null;
     if (_currentChatId != null) {
-      // MessageRemoteDataSource'da stream'ni yopish
-      // Bu method'ni MessageRemoteDataSource'da implement qilish kerak
+      getMessagesStreamUsecase.disposeStream(_currentChatId!);
+      _currentChatId = null;
     }
+    return super.close();
   }
 }

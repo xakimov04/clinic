@@ -1,6 +1,8 @@
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/client/receptions/presentation/pages/receptions_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../bloc/reception_bloc.dart';
 
 class ReceptionsScreen extends StatefulWidget {
@@ -22,9 +24,17 @@ class _ReceptionsScreenState extends State<ReceptionsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Медицинская карта")),
       body: BlocBuilder<ReceptionBloc, ReceptionState>(
+        buildWhen: (previous, current) {
+          return current is ReceptionLoaded || current is ReceptionLoading;
+        },
         builder: (context, state) {
           if (state is ReceptionLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+              ),
+            );
           } else if (state is ReceptionLoaded) {
             if (state.receptions.isEmpty) {
               return const Center(child: Text("Нет истории приёмов"));
@@ -36,13 +46,36 @@ class _ReceptionsScreenState extends State<ReceptionsScreen> {
               itemBuilder: (context, i) {
                 final r = state.receptions[i];
                 return ListTile(
+                  leading: SizedBox(
+                    width: 60,
+                    height: double.maxFinite,
+                    child: ClipRRect(
+                      borderRadius: BorderRadiusGeometry.circular(10),
+                      child: CacheImageWidget(
+                        imageUrl: r.photo!,
+                        errorWidget:
+                            SvgPicture.asset('assets/images/avatar.svg'),
+                      ),
+                    ),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(color: Colors.grey.shade300),
                   ),
-                  title: Text(r.fullName),
-                  subtitle: Text(r.specialization),
-                  trailing: const Icon(Icons.arrow_forward_ios),
+                  title: Text(
+                    r.fullName,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      r.clinic!.isEmpty ? SizedBox() : Text(r.clinic!),
+                      Text(r.specialization),
+                    ],
+                  ),
                   onTap: () {
                     context
                         .read<ReceptionBloc>()
@@ -52,6 +85,7 @@ class _ReceptionsScreenState extends State<ReceptionsScreen> {
                         builder: (_) => ReceptionListScreen(
                           clientName: r.fullName,
                           clientId: r.id,
+                          photo: r.photo ?? "",
                         ),
                       ),
                     );

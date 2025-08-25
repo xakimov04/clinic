@@ -22,7 +22,7 @@ class DoctorModel extends DoctorEntity {
       avatar: json['avatar'] ?? "",
       fullName:
           json['full_name'] ?? "${json['first_name']} ${json["last_name"]}",
-      specialization: json['specialization'] ?? "Doctor",
+      specialization: json['specialization'] ?? "Доктор",
       isAvailable: json['is_available'] ?? false,
       medicalLicense: json['medical_license'] ?? "",
     );

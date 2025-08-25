@@ -12,4 +12,5 @@ abstract class MessageRepository {
   );
 
   Stream<List<MessageEntity>> getMessagesStream(int chatId);
+  void disposeStream(int chatId);
 }

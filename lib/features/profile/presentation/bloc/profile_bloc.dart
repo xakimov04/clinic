@@ -1,3 +1,6 @@
+import 'package:clinic/core/di/export/di_export.dart';
+import 'package:clinic/core/di/modules/receptions_module.dart';
+import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/features/profile/domain/entities/profile_entities.dart';
 import 'package:clinic/features/profile/domain/usecase/get_user_profile.dart';
 import 'package:clinic/features/profile/domain/usecase/logout.dart';
@@ -32,7 +35,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final result = await getUserProfile(NoParams());
     emit(result.fold(
       (failure) => ProfileError(failure.message),
-      (user) => ProfileLoaded(user),
+      (user) {
+        if (user.phoneNumber!.isEmpty) {
+          sl<LocalStorageService>().setBool(StorageKeys.isprofileFill, true);
+        } else {
+          sl<LocalStorageService>().setBool(StorageKeys.isprofileFill, false);
+        }
+        return ProfileLoaded(user);
+      },
     ));
   }
 

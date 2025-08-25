@@ -8,6 +8,8 @@ class ReceptionClientEntity {
   final String organizationId;
   final String? mainServices;
   final String? shortDescription;
+  final String? clinic;
+  final String? photo;
 
   const ReceptionClientEntity({
     required this.id,
@@ -19,5 +21,7 @@ class ReceptionClientEntity {
     required this.organizationId,
     this.mainServices,
     this.shortDescription,
+    this.clinic,
+    this.photo,
   });
 }

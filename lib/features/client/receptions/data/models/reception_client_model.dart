@@ -11,19 +11,23 @@ class ReceptionClientModel extends ReceptionClientEntity {
     required super.organizationId,
     super.mainServices,
     super.shortDescription,
+    super.clinic,
+    super.photo,
   });
 
   factory ReceptionClientModel.fromJson(Map<String, dynamic> json) {
     return ReceptionClientModel(
-      id: json['id'] as String,
-      fullName: json['наименование'] as String,
-      lastName: json['фамилия'] as String,
-      firstName: json['name'] as String,
-      middleName: json['отчество'] as String,
-      specialization: json['специализация'] as String,
-      organizationId: json['организация'] as String,
-      mainServices: json['основныеуслуги'] as String?,
-      shortDescription: json['краткоеописание'] as String?,
+      id: json['id'] ?? "",
+      fullName: json['наименование'] ?? "",
+      lastName: json['фамилия'] ?? "",
+      firstName: json['name'] ?? "",
+      middleName: json['отчество'] ?? "",
+      specialization: json['специализация'] ?? "",
+      organizationId: json['организация'] ?? "",
+      mainServices: json['основныеуслуги'] ?? "",
+      shortDescription: json['краткоеописание'] ?? "",
+      clinic: json['clinic'] ?? "",
+      photo: json['photo'] ?? "",
     );
   }
 
@@ -38,6 +42,8 @@ class ReceptionClientModel extends ReceptionClientEntity {
       'организация': organizationId,
       'основныеуслуги': mainServices,
       'краткоеописание': shortDescription,
+      'clinic': clinic,
+      'photo': photo,
     };
   }
 }

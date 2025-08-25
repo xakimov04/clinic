@@ -1,4 +1,5 @@
 import 'package:clinic/core/di/modules/appointment_module.dart';
+import 'package:clinic/core/di/modules/doctor_appointments_module.dart';
 import 'package:clinic/core/di/modules/news_module.dart';
 import 'modules/receptions_module.dart';
 
@@ -17,4 +18,5 @@ Future<void> init() async {
   await registerAppointmentModule();
   await registerNewsModule();
   await registerReceptionsModule();
+  await registerDoctorAppointmentsModule();
 }

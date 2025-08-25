@@ -16,7 +16,7 @@ class ReceptionRemoteDataSourceImpl implements ReceptionRemoteDataSource {
 
   @override
   Future<List<ReceptionClientModel>> getReceptionsClient() async {
-    final result = await networkManager.fetchData(url: "employees-client/");
+    final result = await networkManager.fetchData(url: "employees-client-v2/");
     final data = result['data'];
 
     if (data == null || data is! List) return [];
@@ -41,8 +41,32 @@ class ReceptionRemoteDataSourceImpl implements ReceptionRemoteDataSource {
         await networkManager.fetchData(url: "reception-info/?guid=$id");
     final data = result['data'];
 
-    if (data == null || data is! List) return [];
+    if (data == null) return [];
 
-    return data.map((json) => ReceptionInfoModel.fromJson(json)).toList();
+    return _parseReceptionInfoData(data);
+  }
+
+  List<ReceptionInfoModel> _parseReceptionInfoData(dynamic data) {
+    try {
+      if (data is List) {
+        return data
+            .where((item) => item != null)
+            .map((json) =>
+                ReceptionInfoModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+
+      // Agar data Map bo'lsa - uni List ichiga o'rab qaytarish
+      if (data is Map<String, dynamic>) {
+        return [ReceptionInfoModel.fromJson(data)];
+      }
+
+      // Boshqa data type'lar uchun bo'sh list
+      return [];
+    } catch (e) {
+      // Parsing xatoligi bo'lsa, log qilib bo'sh list qaytarish
+      print('Error parsing reception info data: $e');
+      return [];
+    }
   }
 }

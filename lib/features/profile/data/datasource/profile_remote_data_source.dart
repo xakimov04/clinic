@@ -38,7 +38,6 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
       );
       return ProfileModel.fromJson(data);
     } catch (e) {
-      print(e);
       throw ServerException(message: 'Ошибка обновления информации профиля');
     }
   }
@@ -46,7 +45,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
   @override
   Future<void> logout() async {
     final refreshToken =
-        sl<LocalStorageService>().getString(StorageKeys.refreshToken);
+        await sl<LocalStorageService>().getString(StorageKeys.refreshToken);
     try {
       await networkManager.postData(url: 'logout/', data: {
         "refresh": refreshToken,

@@ -4,14 +4,18 @@ class ReceptionInfoModel extends ReceptionInfoEntity {
   ReceptionInfoModel({
     super.diagnosis,
     super.treatmentPlan,
-    super.attachedFile,
+    super.attachedFiles,
   });
 
   factory ReceptionInfoModel.fromJson(Map<String, dynamic> json) {
+    final attachedList = (json['attached_files'] as List<dynamic>?)
+        ?.map((e) => AttachedFile.fromJson(e as Map<String, dynamic>))
+        .toList();
+
     return ReceptionInfoModel(
-      diagnosis: json['диагноз'] as String?,
-      treatmentPlan: json['планлечения'] as String?,
-      attachedFile: _cleanString(json['прикрепленныйфайл']),
+      diagnosis: json['диагноз'] ?? "",
+      treatmentPlan: json['планлечения'] ?? "",
+      attachedFiles: attachedList,
     );
   }
 
@@ -19,15 +23,7 @@ class ReceptionInfoModel extends ReceptionInfoEntity {
     return {
       'диагноз': diagnosis,
       'планлечения': treatmentPlan,
-      'прикрепленныйфайл': attachedFile,
+      'прикрепленныйфайл': attachedFiles,
     };
-  }
-
-  static String? _cleanString(dynamic value) {
-    if (value is String) {
-      final cleaned = value.trim();
-      return cleaned.isEmpty ? null : cleaned;
-    }
-    return null;
   }
 }

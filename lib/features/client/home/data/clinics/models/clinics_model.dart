@@ -9,18 +9,19 @@ class ClinicsModel extends ClinicsEntity {
     required super.phone,
     required super.email,
     required super.doctorsCount,
+    required super.photo,
   });
 
   factory ClinicsModel.fromJson(Map<String, dynamic> json) {
     return ClinicsModel(
-      id: json['id'] ?? 0,
-      uuid: json['uuid'] ?? "",
-      name: json['name'] ?? "",
-      address: json['address'] ?? "",
-      phone: json['phone'] ?? "",
-      email: json['email'] ?? "",
-      doctorsCount: json['doctors_count'] ?? 0,
-    );
+        id: json['id'] ?? 0,
+        uuid: json['uuid'] ?? "",
+        name: json['name'] ?? "",
+        address: json['address'] ?? "",
+        phone: json['phone'] ?? "",
+        email: json['email'] ?? "",
+        doctorsCount: json['doctors_count'] ?? 0,
+        photo: json['photo'] ?? "");
   }
 
   Map<String, dynamic> toJson() {

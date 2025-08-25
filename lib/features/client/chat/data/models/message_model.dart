@@ -1,5 +1,4 @@
 import 'package:clinic/features/client/chat/domain/entities/message_model.dart';
-import 'package:clinic/features/client/chat/domain/entities/send_message_request.dart';
 
 class MessageModel extends MessageEntity {
   const MessageModel({
@@ -10,6 +9,7 @@ class MessageModel extends MessageEntity {
     required super.senderId,
     required super.senderName,
     required super.senderType,
+    super.file,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -20,8 +20,8 @@ class MessageModel extends MessageEntity {
       isRead: json['is_read'] ?? false,
       senderId: json['sender'] ?? 0,
       senderName: json['sender_name'] ?? '',
-      senderType:
-          MessageSenderType.fromString(json['sender_type'] ?? 'patient'),
+      senderType: MessageSenderType.fromString(json['sender_type'] ?? 'patient'),
+      file: json['file'], // Null bo'lishi mumkin
     );
   }
 
@@ -34,6 +34,8 @@ class MessageModel extends MessageEntity {
       'sender': senderId,
       'sender_name': senderName,
       'sender_type': senderType.value,
+      'file': file,
     };
   }
 }
+

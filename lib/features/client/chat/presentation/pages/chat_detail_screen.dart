@@ -1,10 +1,14 @@
 import 'dart:io';
 import 'package:clinic/core/ui/widgets/controls/russian_text_selection_controls.dart';
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/client/chat/domain/entities/message_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
@@ -28,6 +32,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _messageFocusNode = FocusNode();
+  final ImagePicker _imagePicker = ImagePicker();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -35,6 +40,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   bool _isComposing = false;
   bool _showScrollToBottom = false;
   bool _isInitialLoad = true;
+  File? _selectedFile;
 
   @override
   void initState() {
@@ -64,7 +70,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
   void _setupScrollListener() {
     _scrollController.addListener(() {
-      // Scroll to bottom tugmasini ko'rsatish mantiqini optimallashtiramiz
       final isScrolledUp = _scrollController.hasClients &&
           _scrollController.offset >
               _scrollController.position.maxScrollExtent - 1000;
@@ -92,7 +97,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
     _scrollController.dispose();
     _messageFocusNode.dispose();
     _animationController.dispose();
-    context.read<ChatDetailBloc>().disposeChat();
+
     super.dispose();
   }
 
@@ -116,8 +121,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                   message: state.message,
                 );
               } else if (state is ChatDetailLoaded) {
-                // Telegram uslubida - faqat yangi xabar yuborganimizda scroll qilamiz
-                // yoki birinchi yuklanishda
                 if (_isInitialLoad && state.messages.isNotEmpty) {
                   _isInitialLoad = false;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -140,7 +143,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
               );
             },
           ),
-          // Scroll to bottom button
           if (_showScrollToBottom)
             Positioned(
               right: 16,
@@ -155,14 +157,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
-      elevation: 1,
+      elevation: 0,
+      surfaceTintColor: Colors.white,
       systemOverlayStyle: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
       ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_ios, color: ColorConstants.textColor),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () {
+          context.read<ChatDetailBloc>().close();
+          Navigator.of(context).pop();
+        },
       ),
       title: Row(
         children: [
@@ -182,26 +188,11 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  'online', // Bu statusni real ma'lumotdan olish kerak
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: ColorConstants.primaryColor.withOpacity(0.8),
-                  ),
-                ),
               ],
             ),
           ),
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.more_vert, color: ColorConstants.textColor),
-          onPressed: () {
-            // Chat options
-          },
-        ),
-      ],
     );
   }
 
@@ -251,10 +242,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 
   Widget _buildOptimizedMessagesListView(List<MessageEntity> messages) {
-    // Telegram uslubida - reversed ListView
     return ListView.builder(
       controller: _scrollController,
-      reverse: true, // Bu muhim! Telegram kabi pastdan boshlanadi
+      reverse: true,
       padding: const EdgeInsets.only(
         left: 16,
         right: 16,
@@ -266,7 +256,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         parent: AlwaysScrollableScrollPhysics(),
       ),
       itemBuilder: (context, index) {
-        // reverse bo'lgani uchun index'ni teskarisiga aylantiramiz
         final reversedIndex = messages.length - 1 - index;
         final message = messages[reversedIndex];
         final nextMessage =
@@ -368,7 +357,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             24.h,
             const Text(
-              'Suhbatni boshlang',
+              'Начните беседу',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -377,7 +366,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             8.h,
             const Text(
-              'Shifokorga birinchi xabaringizni yuboring',
+              'Отправьте первое сообщение врачу',
               style: TextStyle(
                 fontSize: 14,
                 color: ColorConstants.secondaryTextColor,
@@ -404,7 +393,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ),
             16.h,
             const Text(
-              'Xatolik yuz berdi',
+              'Произошла ошибка',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -424,7 +413,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
             ElevatedButton.icon(
               onPressed: _loadMessages,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Qayta urinish'),
+              label: const Text('Попробовать снова'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.primaryColor,
                 foregroundColor: Colors.white,
@@ -462,18 +451,9 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 
   Widget _buildDateDivider(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(date.year, date.month, date.day);
-
-    String dateText;
-    if (messageDate == today) {
-      dateText = 'Bugun';
-    } else if (messageDate == today.subtract(const Duration(days: 1))) {
-      dateText = 'Kecha';
-    } else {
-      dateText = '${date.day}.${date.month}.${date.year}';
-    }
+    // Har doim to'liq sana formatini ko'rsatish
+    final dateText =
+        '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
@@ -517,56 +497,396 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         ],
       ),
       child: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Container(
-                constraints: const BoxConstraints(
-                  minHeight: 44,
-                  maxHeight: 120,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorConstants.backgroundColor,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: _messageFocusNode.hasFocus
-                        ? ColorConstants.primaryColor.withOpacity(0.3)
-                        : ColorConstants.borderColor.withOpacity(0.3),
-                    width: 1,
+            // File preview
+            if (_selectedFile != null) _buildFilePreview(),
+
+            // Input row
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Attach file button
+                Container(
+                  width: 44,
+                  height: 44,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: ColorConstants.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
                   ),
-                ),
-                child: TextField(
-                  contextMenuBuilder: RussianContextMenu.build,
-                  controller: _messageController,
-                  focusNode: _messageFocusNode,
-                  enabled: !isSending,
-                  maxLines: null,
-                  minLines: 1,
-                  textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.4,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Xabar yozing...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: isSending ? null : _showAttachmentOptions,
+                      child: const Icon(
+                        Icons.attach_file_rounded,
+                        color: ColorConstants.primaryColor,
+                        size: 20,
+                      ),
                     ),
-                    isDense: true,
                   ),
-                  onSubmitted: (_) => _sendMessage(),
                 ),
-              ),
+
+                // Text input
+                Expanded(
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minHeight: 44,
+                      maxHeight: 120,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ColorConstants.backgroundColor,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: _messageFocusNode.hasFocus
+                            ? ColorConstants.primaryColor.withOpacity(0.3)
+                            : ColorConstants.borderColor.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      contextMenuBuilder: RussianContextMenu.build,
+                      controller: _messageController,
+                      focusNode: _messageFocusNode,
+                      enabled: !isSending,
+                      maxLines: null,
+                      minLines: 1,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.4,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText: 'Напишите сообщение...',
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                ),
+
+                8.w,
+                _buildSendButton(isSending),
+              ],
             ),
-            8.w,
-            _buildSendButton(isSending),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildFilePreview() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: ColorConstants.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.primaryColor.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          // File preview or icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: ColorConstants.primaryColor.withOpacity(0.1),
+            ),
+            child: _isImageFile(_selectedFile!)
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      _selectedFile!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.image_rounded,
+                        color: ColorConstants.primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                  )
+                : Icon(
+                    _getFileIcon(_selectedFile!.path),
+                    color: ColorConstants.primaryColor,
+                    size: 24,
+                  ),
+          ),
+
+          12.w,
+
+          // File info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _selectedFile!.path.split('/').last,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: ColorConstants.textColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                4.h,
+                Text(
+                  _formatFileSize(_selectedFile!.lengthSync()),
+                  style: const TextStyle(
+                    color: ColorConstants.secondaryTextColor,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Remove button
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _selectedFile = null;
+              });
+            },
+            icon: const Icon(
+              Icons.close_rounded,
+              color: ColorConstants.secondaryTextColor,
+            ),
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 32,
+              minHeight: 32,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isImageFile(File file) {
+    final extension = file.path.toLowerCase();
+    return extension.endsWith('.jpg') ||
+        extension.endsWith('.jpeg') ||
+        extension.endsWith('.png') ||
+        extension.endsWith('.gif') ||
+        extension.endsWith('.webp');
+  }
+
+  IconData _getFileIcon(String filePath) {
+    final extension = filePath.toLowerCase();
+
+    if (_isImageFile(File(filePath))) {
+      return Icons.image_rounded;
+    } else if (extension.endsWith('.pdf')) {
+      return Icons.picture_as_pdf_rounded;
+    } else if (extension.endsWith('.doc') || extension.endsWith('.docx')) {
+      return Icons.description_rounded;
+    } else if (extension.endsWith('.txt')) {
+      return Icons.text_snippet_rounded;
+    } else {
+      return Icons.insert_drive_file_rounded;
+    }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes Б';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} КБ';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} МБ';
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: ColorConstants.borderColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            16.h,
+
+            const Text(
+              'Выберите файл',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: ColorConstants.textColor,
+              ),
+            ),
+
+            20.h,
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildAttachmentOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'Камера',
+                  color: Colors.blue,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromCamera();
+                  },
+                ),
+                _buildAttachmentOption(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Галерея',
+                  color: Colors.green,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImageFromGallery();
+                  },
+                ),
+                _buildAttachmentOption(
+                  icon: Icons.insert_drive_file_rounded,
+                  label: 'Документ',
+                  color: Colors.orange,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickDocument();
+                  },
+                ),
+              ],
+            ),
+
+            20.h,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAttachmentOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          8.h,
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: ColorConstants.textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedFile = File(image.path);
+        });
+      }
+    } catch (e) {
+      _showError('Ошибка при съемке с камеры');
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedFile = File(image.path);
+        });
+      }
+    } catch (e) {
+      _showError('Ошибка при выборе изображения из галереи');
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+
+        // File size check (10MB)
+        final fileSize = await file.length();
+        const maxSize = 10 * 1024 * 1024;
+
+        if (fileSize > maxSize) {
+          _showError('Размер файла не должен превышать 10 МБ');
+          return;
+        }
+
+        setState(() {
+          _selectedFile = file;
+        });
+      }
+    } catch (e) {
+      _showError('Ошибка при выборе документа');
+    }
+  }
+
+  bool _canSend() {
+    return _isComposing || _selectedFile != null;
   }
 
   Widget _buildSendButton(bool isSending) {
@@ -575,7 +895,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: _isComposing && !isSending
+        color: _canSend() && !isSending
             ? ColorConstants.primaryColor
             : ColorConstants.primaryColor.withOpacity(0.3),
         shape: BoxShape.circle,
@@ -584,7 +904,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: _isComposing && !isSending ? _sendMessage : null,
+          onTap: _canSend() && !isSending ? _sendMessage : null,
           child: Center(
             child: isSending
                 ? SizedBox(
@@ -599,7 +919,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
                   )
                 : Icon(
                     Icons.send_rounded,
-                    color: _isComposing
+                    color: _canSend()
                         ? Colors.white
                         : Colors.white.withOpacity(0.6),
                     size: 20,
@@ -612,30 +932,43 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
 
   void _sendMessage() {
     final content = _messageController.text.trim();
-    if (content.isEmpty || !_isComposing) return;
+
+    if (!_canSend()) return;
 
     HapticFeedback.lightImpact();
+
+    // Agar faqat file bo'lsa, bo'sh string yuboramiz
+    final messageContent =
+        content.isEmpty && _selectedFile != null ? '' : content;
 
     context.read<ChatDetailBloc>().add(
           SendMessageEvent(
             chatId: widget.chat.id,
-            content: content,
+            content: messageContent.isEmpty ? "string" : messageContent,
+            file: _selectedFile,
           ),
         );
 
     _messageController.clear();
     setState(() {
       _isComposing = false;
+      _selectedFile = null;
     });
 
-    // Xabar yuborganda darhol pastga scroll qilamiz
     _scrollToBottomAnimated();
+  }
+
+  void _showError(String message) {
+    CustomSnackbar.showError(
+      context: context,
+      message: message,
+    );
   }
 
   void _scrollToBottomAnimated() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
-        0, // reverse=true bo'lgani uchun 0 eng pastki pozitsiya
+        0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -649,7 +982,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen>
   }
 }
 
-// Optimallashtirilgan Message Bubble Widget
+// Enhanced Message Bubble Widget with File Support
 class _MessageBubble extends StatelessWidget {
   final MessageEntity message;
   final bool showAvatar;
@@ -666,7 +999,7 @@ class _MessageBubble extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(
         top: 2,
-        bottom: isLast ? 8 : 2, // Oxirgi xabar uchun ko'proq margin
+        bottom: isLast ? 8 : 2,
       ),
       child: Row(
         mainAxisAlignment: message.isFromCurrentUser
@@ -674,11 +1007,11 @@ class _MessageBubble extends StatelessWidget {
             : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isFromCurrentUser && showAvatar) ...[
+          if (!message.isFromCurrentUser) ...[
             _buildAvatar(),
             8.w,
           ] else if (!message.isFromCurrentUser) ...[
-            40.w, // Avatar space placeholder
+            40.w,
           ],
           Flexible(
             child: Container(
@@ -704,22 +1037,35 @@ class _MessageBubble extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    message.content,
-                    style: TextStyle(
-                      color: message.isFromCurrentUser
-                          ? Colors.white
-                          : ColorConstants.textColor,
-                      fontSize: 15,
-                      height: 1.35,
+                  // File content
+                  if (message.hasFile) ...[
+                    _buildFileContent(context),
+                    if (message.content.trim().isNotEmpty) 8.h,
+                  ],
+
+                  // Text content - показываем только если есть текст
+                  if (message.content.trim().isNotEmpty &&
+                      message.content != 'string')
+                    Text(
+                      message.content,
+                      style: TextStyle(
+                        color: message.isFromCurrentUser
+                            ? Colors.white
+                            : ColorConstants.textColor,
+                        fontSize: 15,
+                        height: 1.35,
+                      ),
                     ),
-                  ),
-                  4.h,
+
+                  // Spacing только если есть контент
+                  if (message.hasFile || message.content.trim().isNotEmpty) 4.h,
+
+                  // Message info
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        message.formattedTime,
+                        _getFormattedTime(message.timestamp),
                         style: TextStyle(
                           color: message.isFromCurrentUser
                               ? Colors.white.withOpacity(0.7)
@@ -729,15 +1075,27 @@ class _MessageBubble extends StatelessWidget {
                       ),
                       if (message.isFromCurrentUser) ...[
                         4.w,
-                        Icon(
-                          message.isRead
-                              ? Icons.done_all_rounded
-                              : Icons.done_rounded,
-                          size: 14,
-                          color: message.isRead
-                              ? ColorConstants.successColor
-                              : Colors.white.withOpacity(0.7),
-                        ),
+                        if (message.isSending)
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                          )
+                        else
+                          Icon(
+                            message.isRead
+                                ? Icons.done_all_rounded
+                                : Icons.done_rounded,
+                            size: 14,
+                            color: message.isRead
+                                ? ColorConstants.successColor
+                                : Colors.white.withOpacity(0.7),
+                          ),
                       ],
                     ],
                   ),
@@ -748,6 +1106,245 @@ class _MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  // Исправленный метод форматирования времени
+  String _getFormattedTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final messageDate =
+        DateTime(timestamp.year, timestamp.month, timestamp.day);
+
+    if (messageDate == today) {
+      // Сегодня - показываем только время
+      return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    } else if (messageDate == today.subtract(const Duration(days: 1))) {
+      // Вчера
+      return 'Вчера ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    } else {
+      // Другие дни
+      return '${timestamp.day.toString().padLeft(2, '0')}.${timestamp.month.toString().padLeft(2, '0')}.${timestamp.year} ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+    }
+  }
+
+  Widget _buildFileContent(BuildContext context) {
+    if (message.isImage) {
+      return _buildImageContent(context);
+    } else {
+      return _buildDocumentContent(context);
+    }
+  }
+
+  Widget _buildImageContent(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _openFile(context),
+      child: Container(
+        constraints: const BoxConstraints(
+          maxWidth: 200,
+          maxHeight: 200,
+          minWidth: 150,
+          minHeight: 100,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey[200],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: message.isTemporary && message.file != null
+              ? Image.file(
+                  File(message.file!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _buildFileError(),
+                )
+              : message.file != null
+                  ? CacheImageWidget(
+                      imageUrl: message.file!,
+                      fit: BoxFit.cover,
+                      errorWidget: Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.white,
+                        size: 64,
+                      ),
+                    )
+                  : _buildFileError(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentContent(BuildContext context) {
+    final fileName = message.file?.split('/').last ?? 'Файл';
+
+    return GestureDetector(
+      onTap: () => _openFile(context),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: message.isFromCurrentUser
+              ? Colors.white.withOpacity(0.1)
+              : ColorConstants.primaryColor.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: message.isFromCurrentUser
+                ? Colors.white.withOpacity(0.3)
+                : ColorConstants.primaryColor.withOpacity(0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: message.isFromCurrentUser
+                    ? Colors.white.withOpacity(0.2)
+                    : ColorConstants.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _getFileIcon(fileName),
+                color: message.isFromCurrentUser
+                    ? Colors.white
+                    : ColorConstants.primaryColor,
+                size: 20,
+              ),
+            ),
+            12.w,
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    style: TextStyle(
+                      color: message.isFromCurrentUser
+                          ? Colors.white
+                          : ColorConstants.textColor,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  2.h,
+                  Text(
+                    'Нажмите для открытия',
+                    style: TextStyle(
+                      color: message.isFromCurrentUser
+                          ? Colors.white.withOpacity(0.7)
+                          : ColorConstants.secondaryTextColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            8.w,
+            Icon(
+              Icons.open_in_new_rounded,
+              size: 16,
+              color: message.isFromCurrentUser
+                  ? Colors.white.withOpacity(0.7)
+                  : ColorConstants.secondaryTextColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFileError() {
+    return Container(
+      height: 150,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              color: Colors.grey[400],
+              size: 32,
+            ),
+            8.h,
+            Text(
+              'Не удалось загрузить файл',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.toLowerCase();
+
+    if (extension.endsWith('.pdf')) {
+      return Icons.picture_as_pdf_rounded;
+    } else if (extension.endsWith('.doc') || extension.endsWith('.docx')) {
+      return Icons.description_rounded;
+    } else if (extension.endsWith('.txt')) {
+      return Icons.text_snippet_rounded;
+    } else {
+      return Icons.insert_drive_file_rounded;
+    }
+  }
+
+  Future<void> _openFile(BuildContext context) async {
+    if (message.file == null) return;
+
+    try {
+      if (message.isTemporary && message.isImage) {
+        // Local image - show full screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => _FullScreenImageViewer(
+              imagePath: message.file!,
+              isNetworkImage: false,
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Network file
+      if (message.isImage) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => _FullScreenImageViewer(
+              imagePath: message.file!,
+              isNetworkImage: true,
+            ),
+          ),
+        );
+      } else {
+        // Document - open with external app
+        final uri = Uri.parse(message.file!);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Не удалось открыть файл'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ошибка при открытии файла'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   BorderRadius _getBorderRadius() {
@@ -796,6 +1393,60 @@ class _MessageBubble extends StatelessWidget {
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// Full Screen Image Viewer
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imagePath;
+  final bool isNetworkImage;
+
+  const _FullScreenImageViewer({
+    required this.imagePath,
+    required this.isNetworkImage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+        ),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          panEnabled: true,
+          boundaryMargin: const EdgeInsets.all(20),
+          minScale: 0.5,
+          maxScale: 4,
+          child: isNetworkImage
+              ? CacheImageWidget(
+                  imageUrl: imagePath,
+                  fit: BoxFit.cover,
+                  errorWidget: Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                )
+              : Image.file(
+                  File(imagePath),
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                ),
         ),
       ),
     );

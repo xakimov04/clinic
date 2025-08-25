@@ -1,6 +1,9 @@
 // lib/features/profile/presentation/pages/profile_details_screen.dart
 import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/di/modules/receptions_module.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
+import 'package:clinic/core/local/local_storage_service.dart';
+import 'package:clinic/core/local/storage_keys.dart';
 import 'package:clinic/core/ui/widgets/buttons/custom_button.dart';
 import 'package:clinic/core/ui/widgets/inputs/custom_text_feild.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
@@ -11,14 +14,17 @@ import 'package:clinic/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
-  final ProfileEntities user;
+  final ProfileEntities? user;
+  final bool isFromBooking;
 
   const ProfileDetailsScreen({
     super.key,
-    required this.user,
+    this.user,
+    this.isFromBooking = false,
   });
 
   @override
@@ -27,10 +33,10 @@ class ProfileDetailsScreen extends StatefulWidget {
 
 class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     with SingleTickerProviderStateMixin {
-  // Form kaliti
+  // Form калити
   final _formKey = GlobalKey<FormState>();
 
-  // Controllerlar
+  // Контроллерлар
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _middleNameController;
@@ -38,21 +44,21 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   late final TextEditingController _birthDateController;
   late final TextEditingController _genderController;
 
-  // Holatni kuzatish uchun
+  // Ҳолатни кузатиш учун
   String? _selectedGender;
   DateTime? _selectedDate;
   bool _hasChanges = false;
 
-  // Date formatlash
+  // Сана форматлаш
   static final DateFormat _displayDateFormat = DateFormat('dd.MM.yyyy');
 
-  // Jins tanlovi
+  // Жинс танлови
   static const List<({String value, String label})> _genderOptions = [
     (value: 'M', label: 'Мужской'),
     (value: 'F', label: 'Женский'),
   ];
 
-  // Animatsiya
+  // Анимация
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
 
@@ -87,26 +93,29 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   }
 
   void _initializeControllers() {
-    _firstNameController = TextEditingController(text: widget.user.firstName);
-    _lastNameController = TextEditingController(text: widget.user.lastName);
-    _middleNameController = TextEditingController(text: widget.user.middleName);
+    _firstNameController =
+        TextEditingController(text: widget.user?.firstName ?? '');
+    _lastNameController =
+        TextEditingController(text: widget.user?.lastName ?? '');
+    _middleNameController =
+        TextEditingController(text: widget.user?.middleName ?? '');
 
     _phoneController = TextEditingController(
-      text: _formatToRussianPhone(widget.user.phoneNumber ?? ''),
+      text: _formatToRussianPhone(widget.user?.phoneNumber ?? ''),
     );
 
     _birthDateController = TextEditingController(
-      text: widget.user.dateOfBirth != null
-          ? _displayDateFormat.format(widget.user.dateOfBirth!)
+      text: widget.user?.dateOfBirth != null
+          ? _displayDateFormat.format(widget.user!.dateOfBirth!)
           : '',
     );
 
     _genderController = TextEditingController(
-      text: _getGenderLabel(widget.user.gender),
+      text: _getGenderLabel(widget.user?.gender),
     );
 
-    _selectedGender = widget.user.gender;
-    _selectedDate = widget.user.dateOfBirth;
+    _selectedGender = widget.user?.gender;
+    _selectedDate = widget.user?.dateOfBirth;
   }
 
   void _setupChangeListeners() {
@@ -137,7 +146,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     }
   }
 
-  // Telefon raqamini formatlash
+  // Телефон рақамини форматлаш
   String _formatToRussianPhone(String rawPhone) {
     final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
 
@@ -159,7 +168,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     return '+7 ';
   }
 
-  // Jins labelini olish
+  // Жинс лабелини олиш
   String _getGenderLabel(String? value) {
     if (value == null) return '';
 
@@ -170,26 +179,36 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     }
   }
 
-  // O'zgarishlarni tekshirish
+  // Ўзгаришларни текшириш
   void _checkForChanges() {
-    final hasChanges =
-        _firstNameController.text.trim() != (widget.user.firstName) ||
-            _lastNameController.text.trim() != (widget.user.lastName) ||
-            _middleNameController.text.trim() != (widget.user.middleName) ||
-            _phoneController.text !=
-                _formatToRussianPhone(widget.user.phoneNumber ?? '') ||
-            _selectedGender != widget.user.gender ||
-            _selectedDate != widget.user.dateOfBirth;
+    // Янги маълумотлар билан default қийматларни солиштириш
+    final originalFirstName = widget.user?.firstName ?? '';
+    final originalLastName = widget.user?.lastName ?? '';
+    final originalMiddleName = widget.user?.middleName ?? '';
+    final originalPhone = _formatToRussianPhone(widget.user?.phoneNumber ?? '');
+    final originalGender = widget.user?.gender;
+    final originalBirthDate = widget.user?.dateOfBirth;
 
-    if (_hasChanges != hasChanges) {
-      setState(() => _hasChanges = hasChanges);
+    final hasChanges = _firstNameController.text.trim() != originalFirstName ||
+        _lastNameController.text.trim() != originalLastName ||
+        _middleNameController.text.trim() != originalMiddleName ||
+        _phoneController.text != originalPhone ||
+        _selectedGender != originalGender ||
+        _selectedDate != originalBirthDate;
+
+    // Booking режимида faqat telefon majburiy
+    final shouldShowChanges =
+        widget.isFromBooking ? _phoneController.text.isNotEmpty : hasChanges;
+
+    if (_hasChanges != shouldShowChanges) {
+      setState(() => _hasChanges = shouldShowChanges);
     }
   }
 
-  // Validatorlar
+  // Валидаторлар - faqat telefon uchun majburiy
   String? _validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) {
-      return '$fieldName обязательно для заполнения';
+      return null; // Optional qilindi
     }
     if (value.trim().length < 2) {
       return '$fieldName должно содержать минимум 2 символа';
@@ -211,13 +230,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   }
 
   String? _validateSelection(String? value, String fieldName) {
-    if (value?.trim().isEmpty ?? true) {
-      return '$fieldName обязателен для заполнения';
-    }
+    // Optional qilindi - faqat telefon majburiy
     return null;
   }
 
-  // Sana tanlash
+  // Сана танлаш
   Future<void> _selectDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -247,7 +264,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     }
   }
 
-  // Jins tanlash
+  // Жинс танлаш
   void _selectGender() {
     showModalBottomSheet<void>(
       context: context,
@@ -312,40 +329,145 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
     Navigator.pop(context);
   }
 
-  // O'zgarishlarni saqlash
-  void _saveChanges() {
+  // Ўзгаришларни сақлаш
+  Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
     final rawPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    final currentModel = ProfileModel.fromEntity(widget.user);
 
-    final updatedModel = currentModel.copyWith(
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      middleName: _middleNameController.text.trim(),
-      phoneNumber: rawPhone,
-      gender: _selectedGender,
-      dateOfBirth: _selectedDate,
-    );
+    final ProfileModel updatedModel;
+    if (widget.user != null) {
+      final currentModel = ProfileModel.fromEntity(widget.user!);
+      updatedModel = currentModel.copyWith(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        middleName: _middleNameController.text.trim(),
+        phoneNumber: rawPhone,
+        gender: _selectedGender,
+        dateOfBirth: _selectedDate,
+      );
+    } else {
+      updatedModel = ProfileModel(
+        id: 0,
+        username: _firstNameController.text.trim(),
+        email: '',
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        middleName: _middleNameController.text.trim(),
+        phoneNumber: rawPhone,
+        gender: _selectedGender,
+        dateOfBirth: _selectedDate,
+        verified: false,
+        agreedToTerms: true,
+        biometricEnabled: false,
+        userType: 'patient',
+        avatar: null,
+        isAvailable: true,
+      );
+    }
 
     context.read<ProfileBloc>().add(UpdateProfileEvent(updatedModel));
   }
 
+  // Орқага қайтиш логикаси
+  Future<bool> _handleBackPress() async {
+    if (_hasChanges && widget.isFromBooking) {
+      return await _showUnsavedChangesDialog() ?? false;
+    }
+
+    if (widget.isFromBooking) {
+      context.pop(false);
+      return false;
+    }
+    context.pop();
+
+    return true;
+  }
+
+  // Сақланмаган ўзгаришлар диалоги
+  Future<bool?> _showUnsavedChangesDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Несохраненные изменения',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: ColorConstants.textColor,
+          ),
+        ),
+        content: const Text(
+          'У вас есть несохраненные изменения. Вы уверены, что хотите выйти без сохранения?',
+          style: TextStyle(
+            fontSize: 14,
+            color: ColorConstants.secondaryTextColor,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Отмена',
+              style: TextStyle(
+                color: ColorConstants.primaryColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+              context.pop(false); // Booking'га false қайтариш
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Выйти',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocListener<ProfileBloc, ProfileState>(
-      listener: _handleProfileStateChanges,
-      child: Scaffold(
-        backgroundColor: ColorConstants.backgroundColor,
-        appBar: _buildAppBar(),
-        body: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Expanded(child: _buildForm()),
-                _buildSaveButton(),
-              ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          final shouldPop = await _handleBackPress();
+          if (shouldPop && mounted) {
+            Navigator.of(context).pop();
+          }
+        }
+      },
+      child: BlocListener<ProfileBloc, ProfileState>(
+        listener: _handleProfileStateChanges,
+        child: Scaffold(
+          backgroundColor: ColorConstants.backgroundColor,
+          appBar: _buildAppBar(),
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(child: _buildForm()),
+                  _buildSaveButton(),
+                ],
+              ),
             ),
           ),
         ),
@@ -356,16 +478,35 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
   void _handleProfileStateChanges(BuildContext context, ProfileState state) {
     switch (state) {
       case ProfileUpdateSuccess():
-        CustomSnackbar.showSuccess(
-          context: context,
-          message: 'Профиль успешно обновлен!',
-        );
-        Navigator.of(context).pop(true);
+        _handleProfileUpdateSuccess();
       case ProfileUpdateError():
         CustomSnackbar.showError(
           context: context,
           message: state.message,
         );
+    }
+  }
+
+  /// Профиль муваффақиятли янгиланганда
+  Future<void> _handleProfileUpdateSuccess() async {
+    try {
+      // LocalStorage'да профиль тўлдирилганини белгилаш
+      await sl<LocalStorageService>().setBool(StorageKeys.isprofileFill, false);
+
+      CustomSnackbar.showSuccess(
+        context: context,
+        message: 'Профиль успешно обновлен!',
+      );
+
+      if (mounted) {
+        context.pop(true);
+      }
+    } catch (e) {
+      debugPrint('Error updating profile fill status: $e');
+      CustomSnackbar.showError(
+        context: context,
+        message: 'Ошибка при сохранении статуса профиля',
+      );
     }
   }
 
@@ -378,11 +519,11 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           Icons.arrow_back_ios,
           color: ColorConstants.textColor,
         ),
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () => _handleBackPress(),
       ),
-      title: const Text(
-        'Детали профиля',
-        style: TextStyle(
+      title: Text(
+        widget.isFromBooking ? 'Заполнить профиль' : 'Детали профиля',
+        style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: ColorConstants.textColor,
@@ -397,7 +538,78 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
       padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
-        child: _buildPersonalInfoSection(),
+        child: Column(
+          children: [
+            // Booking'дан келган бўлса, маълумот кўрсатиш
+            if (widget.isFromBooking) _buildBookingInfoBanner(),
+
+            if (widget.isFromBooking) 16.h,
+
+            _buildPersonalInfoSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Booking маълумот баннери
+  Widget _buildBookingInfoBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            ColorConstants.primaryColor.withOpacity(0.05),
+            ColorConstants.primaryColor.withOpacity(0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: ColorConstants.primaryColor.withOpacity(0.1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: ColorConstants.primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: ColorConstants.primaryColor,
+              size: 20,
+            ),
+          ),
+          12.w,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Завершение записи',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: ColorConstants.primaryColor,
+                  ),
+                ),
+                4.h,
+                Text(
+                  'Заполните телефон для завершения записи на прием',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: ColorConstants.primaryColor.withOpacity(0.8),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -407,7 +619,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
       title: 'Личная информация',
       children: [
         _buildTextField(
-          label: 'Имя *',
+          label: 'Имя',
           controller: _firstNameController,
           hint: 'Введите ваше имя',
           icon: Icons.person_outline,
@@ -416,7 +628,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         ),
         16.h,
         _buildTextField(
-          label: 'Фамилия *',
+          label: 'Фамилия',
           controller: _lastNameController,
           hint: 'Введите вашу фамилию',
           icon: Icons.person_outline,
@@ -425,7 +637,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         ),
         16.h,
         _buildTextField(
-          label: 'Отчество *',
+          label: 'Отчество',
           controller: _middleNameController,
           hint: 'Введите ваше отчество',
           icon: Icons.person_outline,
@@ -434,7 +646,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         ),
         16.h,
         _buildTextField(
-          label: 'Дата рождения *',
+          label: 'Дата рождения',
           controller: _birthDateController,
           hint: 'Выберите дату рождения',
           icon: Icons.calendar_today_outlined,
@@ -445,7 +657,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
         ),
         16.h,
         _buildTextField(
-          label: 'Пол *',
+          label: 'Пол',
           controller: _genderController,
           hint: 'Выберите пол',
           icon: Icons.wc_outlined,
@@ -589,7 +801,9 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen>
           ),
           child: SafeArea(
             child: CustomButton(
-              text: 'Сохранить изменения',
+              text: widget.isFromBooking
+                  ? 'Сохранить и продолжить'
+                  : 'Сохранить изменения',
               onPressed: () {
                 if (_hasChanges && !isLoading) {
                   _saveChanges();

@@ -501,14 +501,7 @@ class _ChatListItem extends StatelessWidget {
 
     return Row(
       children: [
-        if (lastMessage.isFromCurrentUser) ...[
-          Icon(
-            Icons.reply_rounded,
-            size: 14,
-            color: ColorConstants.secondaryTextColor,
-          ),
-          4.w,
-        ],
+       
         Expanded(
           child: Text(
             lastMessage.displayContent,

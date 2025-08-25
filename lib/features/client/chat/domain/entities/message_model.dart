@@ -1,4 +1,3 @@
-import 'package:clinic/features/client/chat/domain/entities/send_message_request.dart';
 import 'package:equatable/equatable.dart';
 
 class MessageEntity extends Equatable {
@@ -9,8 +8,9 @@ class MessageEntity extends Equatable {
   final int senderId;
   final String senderName;
   final MessageSenderType senderType;
-  final bool isTemporary;  // Yangi property
-  final bool isSending;    // Yangi property
+  final String? file; // Yangi property - file URL
+  final bool isTemporary;
+  final bool isSending;
 
   const MessageEntity({
     required this.id,
@@ -20,6 +20,7 @@ class MessageEntity extends Equatable {
     required this.senderId,
     required this.senderName,
     required this.senderType,
+    this.file,
     this.isTemporary = false,
     this.isSending = false,
   });
@@ -33,40 +34,49 @@ class MessageEntity extends Equatable {
         senderId,
         senderName,
         senderType,
+        file,
         isTemporary,
         isSending,
       ];
 
-  // Helper metodlar
+  // Helper methodlar
   bool get isFromCurrentUser => senderType == MessageSenderType.patient;
+  bool get hasFile => file != null && file!.isNotEmpty;
+  
+  // File type checks
+  bool get isImage {
+    if (!hasFile) return false;
+    final extension = file!.toLowerCase();
+    return extension.contains('.jpg') ||
+           extension.contains('.jpeg') ||
+           extension.contains('.png') ||
+           extension.contains('.gif') ||
+           extension.contains('.webp');
+  }
+
+  bool get isDocument {
+    if (!hasFile) return false;
+    final extension = file!.toLowerCase();
+    return extension.contains('.pdf') ||
+           extension.contains('.doc') ||
+           extension.contains('.docx') ||
+           extension.contains('.txt');
+  }
 
   String get formattedTime {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDate =
-        DateTime(timestamp.year, timestamp.month, timestamp.day);
+    final messageDate = DateTime(timestamp.year, timestamp.month, timestamp.day);
 
     if (messageDate == today) {
-      // Bugun
       return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
     } else if (messageDate == today.subtract(const Duration(days: 1))) {
-      // Kecha
-      return 'Вчера ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
+      return 'Kecha ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
     } else {
-      // Boshqa kunlar
       return '${timestamp.day}.${timestamp.month}.${timestamp.year} ${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}';
     }
   }
 
-  bool get isToday {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final messageDate =
-        DateTime(timestamp.year, timestamp.month, timestamp.day);
-    return messageDate == today;
-  }
-
-  // Yangilangan copyWith method
   MessageEntity copyWith({
     int? id,
     String? content,
@@ -75,6 +85,7 @@ class MessageEntity extends Equatable {
     int? senderId,
     String? senderName,
     MessageSenderType? senderType,
+    String? file,
     bool? isTemporary,
     bool? isSending,
   }) {
@@ -86,8 +97,27 @@ class MessageEntity extends Equatable {
       senderId: senderId ?? this.senderId,
       senderName: senderName ?? this.senderName,
       senderType: senderType ?? this.senderType,
+      file: file ?? this.file,
       isTemporary: isTemporary ?? this.isTemporary,
       isSending: isSending ?? this.isSending,
     );
+  }
+}
+
+enum MessageSenderType {
+  patient('patient'),
+  doctor('doctor');
+
+  const MessageSenderType(this.value);
+  final String value;
+
+  static MessageSenderType fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'doctor':
+        return MessageSenderType.doctor;
+      case 'patient':
+      default:
+        return MessageSenderType.patient;
+    }
   }
 }

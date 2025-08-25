@@ -44,7 +44,8 @@ class NetworkService {
         },
         onError: (DioException e, handler) async {
           // Xatolikni qayta ishlash: API va tarmoq xatoliklari
-          log('Error [${e.response?.statusCode}] => ${e.message}');
+          // log('Error [${e.response?.statusCode}] => ${e.message}');
+          log('Error [${e.response?.statusCode}] => ${e.response!.data}');
 
           if (e.response?.statusCode == 401) {
             // TokenManager orqali xatolikni hal qilish

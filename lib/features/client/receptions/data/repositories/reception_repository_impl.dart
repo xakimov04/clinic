@@ -27,7 +27,8 @@ class ReceptionRepositoryImpl implements ReceptionRepository {
   }
 
   @override
-  Future<Either<Failure, List<ReceptionListEntity>>> getReceptionsList(String id) async{
+  Future<Either<Failure, List<ReceptionListEntity>>> getReceptionsList(
+      String id) async {
     try {
       final result = await receptionRemoteDataSource.getReceptionsList(id);
       return Right(result);
@@ -39,13 +40,15 @@ class ReceptionRepositoryImpl implements ReceptionRepository {
   }
 
   @override
-  Future<Either<Failure, List<ReceptionInfoEntity>>> getReceptionsInfo(String id)async {
-     try {
+  Future<Either<Failure, List<ReceptionInfoEntity>>> getReceptionsInfo(
+      String id) async {
+    try {
       final result = await receptionRemoteDataSource.getReceptionsInfo(id);
       return Right(result);
     } on DioException {
       return Left(ServerFailure());
     } catch (e) {
+      print(e);
       return Left(UnexpectedFailure());
     }
   }

@@ -10,10 +10,10 @@ class NewsModel extends News {
 
   factory NewsModel.fromJson(Map<String, dynamic> json) {
     return NewsModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      file: json['file'] as String,
+      id: json['id'] ?? "",
+      name: json['name'] ?? "",
+      description: json['description'] ?? "",
+      file: json['file'] ?? "",
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:clinic/core/extension/spacing_extension.dart';
 import 'package:clinic/features/client/news/domain/entities/news.dart';
 import 'package:clinic/features/client/news/presentation/bloc/news_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class NewsScreen extends StatelessWidget {
   const NewsScreen({super.key});
@@ -29,9 +30,7 @@ class NewsScreen extends StatelessWidget {
       body: BlocBuilder<NewsBloc, NewsState>(
         builder: (context, state) {
           if (state is NewsLoading) {
-            return const Center(
-              child: CupertinoActivityIndicator(),
-            );
+            return _buildLoadingShimmer();
           }
 
           if (state is NewsError) {
@@ -53,6 +52,141 @@ class NewsScreen extends StatelessWidget {
           return const SizedBox.shrink();
         },
       ),
+    );
+  }
+
+  Widget _buildLoadingShimmer() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: 5, // Ko'rsatish uchun 5 ta shimmer card
+      itemBuilder: (context, index) {
+        return Container(
+          margin: 8.v,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: 16.circular,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image shimmer
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    width: double.infinity,
+                    height: 200,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+
+              // Content shimmer
+              Padding(
+                padding: 16.a,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title shimmer
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: 4.circular,
+                            ),
+                          ),
+                          8.h,
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.6,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: 4.circular,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    12.h,
+
+                    // Description shimmer
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: 4.circular,
+                            ),
+                          ),
+                          4.h,
+                          Container(
+                            width: double.infinity,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: 4.circular,
+                            ),
+                          ),
+                          4.h,
+                          Container(
+                            width: MediaQuery.of(context).size.width * 0.4,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: 4.circular,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    16.h,
+
+                    // "Read more" shimmer
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey.shade300,
+                      highlightColor: Colors.grey.shade100,
+                      child: Container(
+                        width: 100,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: 4.circular,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -144,7 +278,7 @@ class NewsScreen extends StatelessWidget {
 
   Widget _buildNewsList(List<News> newsList) {
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: newsList.length,
       itemBuilder: (context, index) {
         final news = newsList[index];
@@ -175,9 +309,9 @@ class NewsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image section
+              // Image section with improved placeholder
               ClipRRect(
-                borderRadius: BorderRadius.vertical(
+                borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
                 child: CachedNetworkImage(
@@ -185,17 +319,17 @@ class NewsScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 200,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: ColorConstants.primaryColor.withOpacity(0.1),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorConstants.primaryColor,
-                        ),
-                      ),
+                  placeholder: (context, url) => Shimmer.fromColors(
+                    baseColor: Colors.grey.shade300,
+                    highlightColor: Colors.grey.shade100,
+                    child: Container(
+                      width: double.infinity,
+                      height: 200,
+                      color: Colors.white,
                     ),
                   ),
                   errorWidget: (context, url, error) => Container(
+                    height: 200,
                     color: ColorConstants.primaryColor.withOpacity(0.1),
                     child: const Center(
                       child: Icon(
@@ -287,7 +421,7 @@ class NewsScreen extends StatelessWidget {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(20),
@@ -320,13 +454,17 @@ class NewsScreen extends StatelessWidget {
                           width: double.infinity,
                           height: 250,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: ColorConstants.primaryColor.withOpacity(0.1),
-                            child: const Center(
-                              child: CircularProgressIndicator(),
+                          placeholder: (context, url) => Shimmer.fromColors(
+                            baseColor: Colors.grey.shade300,
+                            highlightColor: Colors.grey.shade100,
+                            child: Container(
+                              width: double.infinity,
+                              height: 250,
+                              color: Colors.white,
                             ),
                           ),
                           errorWidget: (context, url, error) => Container(
+                            height: 250,
                             color: ColorConstants.primaryColor.withOpacity(0.1),
                             child: const Center(
                               child: Icon(

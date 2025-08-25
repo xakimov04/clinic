@@ -1,3 +1,4 @@
+// reception_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/usecase/usecase.dart';
 import 'package:clinic/features/client/receptions/domain/entities/reception_client_entity.dart';
@@ -14,6 +15,7 @@ class ReceptionBloc extends Bloc<ReceptionEvent, ReceptionState> {
   final GetReceptionClient getReceptionsUseCase;
   final GetReceptionInfo getReceptionInfo;
   final GetReceptionList getReceptionList;
+  ReceptionCombinedState _currentCombinedState = ReceptionCombinedState();
 
   ReceptionBloc(
     this.getReceptionsUseCase,
@@ -32,20 +34,8 @@ class ReceptionBloc extends Bloc<ReceptionEvent, ReceptionState> {
     emit(ReceptionLoading());
     final result = await getReceptionsUseCase(NoParams());
     result.fold(
-      (failure) => emit(ReceptionError(failure.message)),
+      (failure) => emit(ReceptionError(failure.message, errorType: 'client')),
       (data) => emit(ReceptionLoaded(data)),
-    );
-  }
-
-  Future<void> _onGetReceptionsInfoEvent(
-    GetReceptionsInfoEvent event,
-    Emitter<ReceptionState> emit,
-  ) async {
-    emit(ReceptionLoading());
-    final result = await getReceptionInfo(event.id);
-    result.fold(
-      (failure) => emit(ReceptionError(failure.message)),
-      (data) => emit(ReceptionInfoLoaded(data)),
     );
   }
 
@@ -53,11 +43,71 @@ class ReceptionBloc extends Bloc<ReceptionEvent, ReceptionState> {
     GetReceptionsListEvent event,
     Emitter<ReceptionState> emit,
   ) async {
-    emit(ReceptionLoading());
+    emit(ReceptionListLoading());
     final result = await getReceptionList(event.id);
     result.fold(
-      (failure) => emit(ReceptionError(failure.message)),
-      (data) => emit(ReceptionListLoaded(data)),
+      (failure) {
+        emit(ReceptionError(failure.message, errorType: 'list'));
+      },
+      (data) {
+        _currentCombinedState = _currentCombinedState.copyWith(
+          receptionList: data,
+        );
+        emit(ReceptionListLoaded(data));
+        emit(_currentCombinedState);
+      },
+    );
+  }
+
+  Future<void> _onGetReceptionsInfoEvent(
+    GetReceptionsInfoEvent event,
+    Emitter<ReceptionState> emit,
+  ) async {
+    // Loading holatini qo'shish
+    final updatedLoadingIds =
+        Set<String>.from(_currentCombinedState.loadingInfoIds)..add(event.id);
+
+    _currentCombinedState = _currentCombinedState.copyWith(
+      loadingInfoIds: updatedLoadingIds,
+    );
+
+    emit(ReceptionInfoLoading(event.id));
+    emit(_currentCombinedState);
+
+    final result = await getReceptionInfo(event.id);
+    result.fold(
+      (failure) {
+        // Loading ni olib tashlash
+        final updatedLoadingIds =
+            Set<String>.from(_currentCombinedState.loadingInfoIds)
+              ..remove(event.id);
+
+        _currentCombinedState = _currentCombinedState.copyWith(
+          loadingInfoIds: updatedLoadingIds,
+          error: failure.message,
+        );
+
+        emit(ReceptionError(failure.message, errorType: 'info'));
+        emit(_currentCombinedState);
+      },
+      (data) {
+        // Ma'lumotlarni saqlash va loading ni olib tashlash
+        final updatedInfos = Map<String, List<ReceptionInfoEntity>>.from(
+            _currentCombinedState.receptionInfos);
+        updatedInfos[event.id] = data;
+
+        final updatedLoadingIds =
+            Set<String>.from(_currentCombinedState.loadingInfoIds)
+              ..remove(event.id);
+
+        _currentCombinedState = _currentCombinedState.copyWith(
+          receptionInfos: updatedInfos,
+          loadingInfoIds: updatedLoadingIds,
+        );
+
+        emit(ReceptionInfoLoaded(event.id, data));
+        emit(_currentCombinedState);
+      },
     );
   }
 }

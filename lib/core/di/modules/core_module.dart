@@ -1,4 +1,5 @@
 import 'package:clinic/core/di/export/di_export.dart';
+import 'package:dio/dio.dart';
 
 Future<void> registerCoreModule() async {
   final sl = GetIt.instance;
@@ -10,6 +11,7 @@ Future<void> registerCoreModule() async {
 
   // Network va Local Storage
   sl.registerLazySingleton(() => LocalStorageService());
+  sl.registerLazySingleton(() => Dio());
   sl.registerLazySingleton(() => RequestHandler());
   sl.registerLazySingleton(() => NetworkManager(requestHandler: sl()));
 }

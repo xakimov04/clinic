@@ -64,7 +64,12 @@ android {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    implementation 'com.google.firebase:firebase-messaging:23.0.0'
+    implementation 'com.google.firebase:firebase-installations:17.0.0'
+    implementation platform('com.google.firebase:firebase-bom:31.2.0')  // so‘nggi BOM versiyasi
+
 }
+apply plugin: 'com.google.gms.google-services'
 
 flutter {
     source = "../.."

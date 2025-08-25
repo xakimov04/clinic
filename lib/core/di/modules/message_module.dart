@@ -33,7 +33,6 @@ Future<void> registerMessageModule() async {
       getMessagesUsecase: sl<GetMessagesUsecase>(),
       sendMessageUsecase: sl<SendMessageUsecase>(),
       getMessagesStreamUsecase: sl<GetMessagesStreamUsecase>(),
-      messageRepository: sl<MessageRepository>(),
     ),
   );
 }

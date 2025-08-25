@@ -194,7 +194,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 30),
 
-              // Меню профиля в отдельном контейнере
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -215,13 +214,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     builder: (context, asyncSnapshot) {
                       return Column(
                         children: [
-                          _buildMenuItem(
-                            icon: Icons.person_outline,
-                            title: "Детали профиля",
-                            onTap: () => _navigateToDetails(user),
-                          ),
-                          _buildDivider(),
                           if (asyncSnapshot.data == UserRole.client.name) ...[
+                            _buildMenuItem(
+                              icon: Icons.person_outline,
+                              title: "Детали профиля",
+                              onTap: () => _navigateToDetails(user),
+                            ),
+                            _buildDivider(),
                             _buildMenuItem(
                               icon: Icons.folder_open,
                               title: "Медицинская карта",
@@ -229,18 +228,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   context.push(RoutePaths.receptionsScreen),
                             ),
                             _buildDivider(),
+                            _buildMenuItem(
+                              icon: Icons.help_outline_rounded,
+                              title: "FAQ",
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FaqScreen(),
+                                    ));
+                              },
+                            ),
                           ],
-                          _buildMenuItem(
-                            icon: Icons.help_outline_rounded,
-                            title: "FAQ",
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FaqScreen(),
-                                  ));
-                            },
-                          ),
                         ],
                       );
                     }),

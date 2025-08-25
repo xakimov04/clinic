@@ -233,8 +233,9 @@ class _AuthScreenState extends State<AuthScreen>
         } else if (state is OtpFailure) {
           CustomSnackbar.showError(
             context: context,
-            message: "Ошибка",
+            message: "Не удалось отправить SMS. Пожалуйста, попробуйте позже.",
           );
+
           // OTP ni tozalash
           _otpKey.currentState?.clear();
         }
@@ -460,158 +461,176 @@ class _AuthScreenState extends State<AuthScreen>
     final isLoading = state is OtpVerifying;
     final displayPhone = _phoneController.text;
 
-    return Container(
-      key: const ValueKey('code_form'),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: 16.circular,
-        boxShadow: [
-          BoxShadow(
-            color: ColorConstants.shadowColor.withOpacity(0.1),
-            blurRadius: 8,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with phone number
-          Center(
-            child: RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: ColorConstants.textColor,
-                ),
-                children: [
-                  const TextSpan(text: 'Введите код из СМС на номер\n'),
-                  TextSpan(
-                    text: displayPhone,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+    return SingleChildScrollView(
+      child: Container(
+        key: const ValueKey('code_form'),
+        width: double.infinity,
+        constraints: BoxConstraints(
+          minHeight: 0,
+          maxWidth: MediaQuery.of(context).size.width - 40,
+        ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: ColorConstants.shadowColor.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with phone number
+            Center(
+              child: RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: ColorConstants.textColor,
                   ),
-                ],
+                  children: [
+                    const TextSpan(text: 'Введите код из СМС на номер\n'),
+                    TextSpan(
+                      text: displayPhone,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          24.h,
+            const SizedBox(height: 24),
 
-          // OTP Input Widget
-          Center(
-            child: OtpInputWidget(
-              key: _otpKey,
-              onCompleted: _verifyCode,
-              onChanged: (value) {
-                setState(() {});
-              },
-              isLoading: isLoading,
+            // OTP Input Widget - Responsive wrapper
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.8,
+                ),
+                child: OtpInputWidget(
+                  key: _otpKey,
+                  onCompleted: _verifyCode,
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  isLoading: isLoading,
+                ),
+              ),
             ),
-          ),
-          24.h,
+            const SizedBox(height: 24),
 
-          // Timer va Resend tugmasi
-          Center(
-            child: Column(
-              children: [
-                if (!_canResendOtp) ...[
-                  Text(
-                    'Отправить код повторно через ${_formatTime(_remainingSeconds)}',
-                    style: TextStyle(
-                      color: ColorConstants.secondaryTextColor,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
+            // Timer va Resend tugmasi
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!_canResendOtp) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Отправить код повторно через ${_formatTime(_remainingSeconds)}',
+                        style: TextStyle(
+                          color: ColorConstants.secondaryTextColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                ] else ...[
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      final isResending = state is OtpSending;
+                  ] else ...[
+                    BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        final isResending = state is OtpSending;
 
-                      return TextButton(
-                        onPressed: isResending
-                            ? null
-                            : () {
-                                _requestCode();
-                              },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isResending) ...[
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    ColorConstants.primaryColor,
+                        return TextButton(
+                          onPressed: isResending
+                              ? null
+                              : () {
+                                  _requestCode();
+                                },
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (isResending) ...[
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      ColorConstants.primaryColor,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              8.w,
-                              Text(
-                                'Отправляем...',
-                                style: TextStyle(
-                                  color: ColorConstants.primaryColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Отправляем...',
+                                  style: TextStyle(
+                                    color: ColorConstants.primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                            ] else ...[
-                              Icon(
-                                Icons.refresh,
-                                size: 18,
-                                color: ColorConstants.primaryColor,
-                              ),
-                              4.w,
-                              Text(
-                                'Отправить код повторно',
-                                style: TextStyle(
+                              ] else ...[
+                                Icon(
+                                  Icons.refresh,
+                                  size: 18,
                                   color: ColorConstants.primaryColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
                                 ),
-                              ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Отправить код повторно',
+                                  style: TextStyle(
+                                    color: ColorConstants.primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
 
-          16.h,
+            const SizedBox(height: 16),
 
-          // Change number button
-          Center(
-            child: TextButton(
-              onPressed: isLoading
-                  ? null
-                  : () {
-                      _stopOtpTimer();
-                      setState(() {
-                        _codeSent = false;
-                      });
-                    },
-              child: Text(
-                'Изменить номер',
-                style: TextStyle(
-                  color: isLoading
-                      ? ColorConstants.secondaryTextColor.withOpacity(0.5)
-                      : ColorConstants.secondaryTextColor,
-                  fontWeight: FontWeight.w500,
+            // Change number button
+            Center(
+              child: TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        _stopOtpTimer();
+                        setState(() {
+                          _codeSent = false;
+                        });
+                      },
+                child: Text(
+                  'Изменить номер',
+                  style: TextStyle(
+                    color: isLoading
+                        ? ColorConstants.secondaryTextColor.withOpacity(0.5)
+                        : ColorConstants.secondaryTextColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

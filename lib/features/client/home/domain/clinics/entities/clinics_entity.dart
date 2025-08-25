@@ -5,6 +5,7 @@ class ClinicsEntity {
   final String address;
   final String phone;
   final String email;
+  final String photo;
   final int doctorsCount;
 
   ClinicsEntity({
@@ -15,5 +16,6 @@ class ClinicsEntity {
     required this.phone,
     required this.email,
     required this.doctorsCount,
+    required this.photo,
   });
 }

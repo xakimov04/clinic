@@ -104,7 +104,9 @@ class DoctorCard extends StatelessWidget {
                           4.w,
                           Expanded(
                             child: Text(
-                              doctor.specialization,
+                              doctor.specialization.isEmpty
+                                  ? "Доктор"
+                                  : doctor.specialization,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

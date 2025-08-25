@@ -1,3 +1,4 @@
+import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
 import 'package:clinic/features/client/home/presentation/widgets/home_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -179,7 +180,7 @@ class _ClinicsItemState extends State<ClinicsItem>
               ),
               8.w,
               Text(
-                'Qayta urinish',
+                'Повторить попытку',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 15,
@@ -231,7 +232,7 @@ class _ClinicsItemState extends State<ClinicsItem>
           ),
           20.h,
           Text(
-            'Klinikalar topilmadi',
+            'Клиники не найдены',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -346,29 +347,30 @@ class _ClinicsItemState extends State<ClinicsItem>
                         overflow: TextOverflow.ellipsis,
                       ),
                       6.h,
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: ColorConstants.secondaryTextColor,
-                          ),
-                          4.w,
-                          Expanded(
-                            child: Text(
-                              clinic.address,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: ColorConstants.secondaryTextColor,
-                                height: 1.2,
+                      if (clinic.address.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: ColorConstants.secondaryTextColor,
+                            ),
+                            4.w,
+                            Expanded(
+                              child: Text(
+                                clinic.address,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: ColorConstants.secondaryTextColor,
+                                  height: 1.2,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -427,10 +429,12 @@ class _ClinicsItemState extends State<ClinicsItem>
             children: [
               // Asosiy rasm
               Positioned.fill(
-                child: Image.asset(
-                  "assets/images/clinc.png",
-                  fit: BoxFit.cover,
-                ),
+                child: clinic.photo.isEmpty
+                    ? Image.asset(
+                        "assets/images/clinc.png",
+                        fit: BoxFit.cover,
+                      )
+                    : CacheImageWidget(imageUrl: clinic.photo),
               ),
               Positioned.fill(
                 child: Container(

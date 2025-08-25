@@ -1,4 +1,10 @@
+import 'package:clinic/core/di/export/di_export.dart';
+import 'package:clinic/core/di/modules/receptions_module.dart';
+import 'package:clinic/core/local/storage_keys.dart';
+import 'package:clinic/core/routes/route_paths.dart';
 import 'package:clinic/core/ui/widgets/images/custom_cached_image.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_bloc.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +17,7 @@ import 'package:clinic/features/client/appointments/presentation/bloc/appointmen
 import 'package:clinic/features/client/home/domain/doctors/entities/doctor_entity.dart';
 import 'package:flutter_cupertino_date_picker_fork/flutter_cupertino_date_picker_fork.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:go_router/go_router.dart';
 
 class AppointmentBookingScreen extends StatefulWidget {
   final DoctorEntity doctor;
@@ -92,6 +99,7 @@ class _AppointmentBookingScreenState extends State<AppointmentBookingScreen> {
           context: context,
           message: 'Запись успешно создана!',
         );
+        context.read<AppointmentBloc>().add(GetAppointmentsEvent());
 
         // Задержка перед возвратом для показа снэкбара
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -914,107 +922,239 @@ class _NotesInputSection extends StatelessWidget {
   }
 }
 
-// Кнопка записи с валидацией
-class _BookingButton extends StatelessWidget {
+// Профиль тўлдириш билан бронлаш тугмаси
+class _BookingButton extends StatefulWidget {
   final AppointmentBookingState state;
 
   const _BookingButton({required this.state});
 
   @override
+  State<_BookingButton> createState() => _BookingButtonState();
+}
+
+class _BookingButtonState extends State<_BookingButton> {
+  bool? _isProfileFilled;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkProfileStatus();
+  }
+
+  /// Профиль статусини текшириш
+  Future<void> _checkProfileStatus() async {
+    try {
+      final isProfileFill =
+          await sl<LocalStorageService>().getBool(StorageKeys.isprofileFill);
+
+      if (mounted) {
+        setState(() {
+          _isProfileFilled = isProfileFill;
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isProfileFilled = false;
+          _isLoadingProfile = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isLoading = state.status == AppointmentBookingStatus.creating;
+    // Профиль статуси юкланаётган вақт
+    if (_isLoadingProfile) {
+      return _buildLoadingButton();
+    }
+
+    final isCreatingAppointment =
+        widget.state.status == AppointmentBookingStatus.creating;
     final isFormValid = _isFormValid();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Индикатор прогресса заполнения формы
-        if (!isFormValid) _buildProgressIndicator(),
+        // Форма тўлдириш прогресси
+        if (!isFormValid) _buildFormProgressIndicator(),
 
+        // Асосий тугма
         SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: (isLoading || !isFormValid)
-                ? null
-                : () => context
-                    .read<AppointmentBookingBloc>()
-                    .add(const CreateAppointment()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isFormValid
-                  ? ColorConstants.primaryColor
-                  : Colors.grey.shade300,
-              disabledBackgroundColor: Colors.grey.shade300,
-              foregroundColor:
-                  isFormValid ? Colors.white : Colors.grey.shade500,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: (isLoading || !isFormValid) ? 0 : 2,
-              shadowColor: ColorConstants.primaryColor.withOpacity(0.3),
-            ),
-            child: isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (isFormValid) ...[
-                        const Icon(Icons.check_circle_outline, size: 20),
-                        8.w,
-                      ],
-                      Text(
-                        _getButtonText(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+            onPressed: _getButtonOnPressed(isCreatingAppointment, isFormValid),
+            style: _getButtonStyle(isFormValid, isCreatingAppointment),
+            child: _buildButtonChild(isCreatingAppointment, isFormValid),
           ),
         ),
       ],
     );
   }
 
-  /// Проверяет валидность формы
-  bool _isFormValid() {
-    return state.selectedClinic != null &&
-        state.selectedDate != null &&
-        state.selectedTime != null;
+  /// Тугманинг onPressed функциясини қайтариш
+  VoidCallback? _getButtonOnPressed(bool isCreating, bool isFormValid) {
+    if (isCreating || !isFormValid) return null;
+
+    return () async {
+      if (_isProfileFilled == false) {
+        _createAppointment();
+      } else {
+        await _handleProfileIncomplete();
+      }
+    };
   }
 
-  /// Возвращает текст для кнопки в зависимости от состояния
-  String _getButtonText() {
-    if (!_isFormValid()) {
-      if (state.selectedClinic == null) {
+  /// Бронни яратиш
+  void _createAppointment() {
+    context.read<AppointmentBookingBloc>().add(const CreateAppointment());
+  }
+
+  /// Профиль тўлдирилмаган ҳолатни ишлаш
+  Future<void> _handleProfileIncomplete() async {
+    final shouldNavigate = await _showProfileRequiredDialog();
+
+    if (shouldNavigate == true) {
+      await _navigateToProfileScreen();
+    }
+  }
+
+  /// Профиль тўлдириш диалогини кўрсатиш
+  Future<bool?> _showProfileRequiredDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ProfileRequiredDialog(),
+    );
+  }
+
+  /// Профиль экранига ўтиш
+  Future<void> _navigateToProfileScreen() async {
+    try {
+      final result = await context.push<bool>(
+        RoutePaths.profileDetailsScreen,
+        extra: {'isFromBooking': true},
+      );
+
+      // Профиль тўлдирилган бўлса статусни янгилаш
+      if (result == true && mounted) {
+        await _checkProfileStatus();
+      }
+    } catch (e) {
+      // Navigation хатосини лог қилиш
+      debugPrint('Profile navigation error: $e');
+    }
+  }
+
+  /// Юкланиш тугмаси
+  Widget _buildLoadingButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey.shade300,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+        ),
+        child: const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Тугма стилини қайтариш
+  ButtonStyle _getButtonStyle(bool isFormValid, bool isCreating) {
+    final isEnabled = isFormValid && !isCreating;
+
+    return ElevatedButton.styleFrom(
+      backgroundColor:
+          isEnabled ? ColorConstants.primaryColor : Colors.grey.shade300,
+      disabledBackgroundColor: Colors.grey.shade300,
+      foregroundColor: isEnabled ? Colors.white : Colors.grey.shade500,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: isEnabled ? 2 : 0,
+      shadowColor: ColorConstants.primaryColor.withOpacity(0.3),
+    );
+  }
+
+  /// Тугма контентини қуриш
+  Widget _buildButtonChild(bool isCreating, bool isFormValid) {
+    if (isCreating) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (isFormValid) ...[
+          const Icon(Icons.check_circle_outline, size: 20),
+          8.w,
+        ],
+        Text(
+          _getButtonText(isFormValid),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Форма валидлигини текшириш
+  bool _isFormValid() {
+    return widget.state.selectedClinic != null &&
+        widget.state.selectedDate != null &&
+        widget.state.selectedTime != null;
+  }
+
+  /// Тугма текстини қайтариш
+  String _getButtonText(bool isFormValid) {
+    if (!isFormValid) {
+      if (widget.state.selectedClinic == null) {
         return 'Выберите клинику';
-      } else if (state.selectedDate == null) {
+      } else if (widget.state.selectedDate == null) {
         return 'Выберите дату';
-      } else if (state.selectedTime == null) {
+      } else if (widget.state.selectedTime == null) {
         return 'Выберите время';
       }
     }
     return 'Записаться на прием';
   }
 
-  /// Строит индикатор прогресса заполнения
-  Widget _buildProgressIndicator() {
-    final steps = [
-      state.selectedClinic != null,
-      state.selectedDate != null,
-      state.selectedTime != null,
+  /// Форма прогресс индикаторини қуриш
+  Widget _buildFormProgressIndicator() {
+    final completionSteps = [
+      widget.state.selectedClinic != null,
+      widget.state.selectedDate != null,
+      widget.state.selectedTime != null,
     ];
 
-    final completedSteps = steps.where((step) => step).length;
-    final totalSteps = steps.length;
+    final completedCount = completionSteps.where((step) => step).length;
+    final totalSteps = completionSteps.length;
+    final progressPercentage = ((completedCount / totalSteps) * 100).round();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -1023,7 +1163,7 @@ class _BookingButton extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Заполнено: $completedSteps из $totalSteps',
+                'Заполнено: $completedCount из $totalSteps',
                 style: const TextStyle(
                   fontSize: 12,
                   color: ColorConstants.secondaryTextColor,
@@ -1032,10 +1172,10 @@ class _BookingButton extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${((completedSteps / totalSteps) * 100).round()}%',
+                '$progressPercentage%',
                 style: TextStyle(
                   fontSize: 12,
-                  color: completedSteps == totalSteps
+                  color: completedCount == totalSteps
                       ? ColorConstants.primaryColor
                       : ColorConstants.secondaryTextColor,
                   fontWeight: FontWeight.w600,
@@ -1045,10 +1185,10 @@ class _BookingButton extends StatelessWidget {
           ),
           8.h,
           LinearProgressIndicator(
-            value: completedSteps / totalSteps,
+            value: completedCount / totalSteps,
             backgroundColor: Colors.grey.shade200,
             valueColor: AlwaysStoppedAnimation<Color>(
-              completedSteps == totalSteps
+              completedCount == totalSteps
                   ? ColorConstants.primaryColor
                   : Colors.orange,
             ),
@@ -1056,6 +1196,149 @@ class _BookingButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Профиль тўлдириш зарур диалоги
+class _ProfileRequiredDialog extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              offset: const Offset(0, 15),
+              blurRadius: 30,
+              color: Colors.black.withOpacity(0.12),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Иконка контейнери
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    ColorConstants.primaryColor.withOpacity(0.1),
+                    ColorConstants.primaryColor.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: ColorConstants.primaryColor.withOpacity(0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 36,
+                color: ColorConstants.primaryColor,
+              ),
+            ),
+            20.h,
+
+            // Сарлавҳа
+            const Text(
+              'Заполните профиль',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            14.h,
+
+            // Тушунтириш матни
+            const Text(
+              'Для записи на прием необходимо заполнить информацию в вашем профиле. Это займет не более минуты.',
+              style: TextStyle(
+                fontSize: 15,
+                color: ColorConstants.secondaryTextColor,
+                height: 1.5,
+                letterSpacing: 0.1,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            28.h,
+
+            // Ҳаракат тугмалари
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: Colors.grey.shade300,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text(
+                      'Позже',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: ColorConstants.secondaryTextColor,
+                      ),
+                    ),
+                  ),
+                ),
+                16.w,
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColorConstants.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.edit_outlined, size: 18),
+                        8.w,
+                        const Text(
+                          'Заполнить',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

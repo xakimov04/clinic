@@ -1,28 +1,13 @@
+import 'package:clinic/core/constants/color_constants.dart';
+import 'package:clinic/core/routes/route_paths.dart';
+import 'package:clinic/features/doctor/home/domain/entity/doctor_appointment_entity.dart';
+import 'package:clinic/features/doctor/home/presentation/bloc/doctor_appointment_bloc.dart';
+import 'package:clinic/features/doctor/home/presentation/widgets/appointment_card.dart';
 import 'package:clinic/features/client/appointments/data/models/appointment_filter.dart';
 import 'package:clinic/features/doctor/home/presentation/widgets/filter_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_bloc.dart';
-import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_event.dart';
-import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_state.dart';
-import 'package:clinic/features/client/appointments/data/models/appointment_model.dart';
-import 'package:clinic/core/constants/color_constants.dart';
 import 'package:go_router/go_router.dart';
-import 'package:clinic/core/routes/route_paths.dart';
-
-class _TabConfig {
-  final AppointmentStatus? status;
-  final String label;
-  final IconData icon;
-
-  const _TabConfig({
-    this.status,
-    required this.label,
-    required this.icon,
-  });
-
-  bool get isAllTab => status == null;
-}
 
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({super.key});
@@ -32,99 +17,207 @@ class DoctorHomeScreen extends StatefulWidget {
 }
 
 class _DoctorHomeScreenState extends State<DoctorHomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
-  AppointmentFilters _currentFilters = AppointmentFilters.empty;
+  final TextEditingController _searchController = TextEditingController();
 
-  static const List<_TabConfig> _tabConfigs = [
-    _TabConfig(
-      status: null,
-      label: 'Все',
-      icon: Icons.list_outlined,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.pending,
-      label: 'Ожидает',
-      icon: Icons.access_time_outlined,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.confirmed,
-      label: 'Подтверждено',
-      icon: Icons.check_circle_outline,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.completed,
-      label: 'Завершено',
-      icon: Icons.task_alt_outlined,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.cancelled,
-      label: 'Отменено',
-      icon: Icons.cancel_outlined,
-    ),
+  // Filter uchun state
+  AppointmentFilters _currentFilters = const AppointmentFilters();
+  bool _hasActiveFilters = false;
+
+  // Statuslar ro'yxati
+  final List<String> _statusTabs = [
+    'Все',
+    'Запланирована',
+    'Оформлена продажа',
+    'Проведен прием',
+    'Выполнена',
+    'Отменена',
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabConfigs.length, vsync: this);
-    _loadAppointments();
+    _tabController = TabController(length: _statusTabs.length, vsync: this);
+
+    // Animation listener qo'shish - bu swipe va tap larni tutadi
+    _tabController.animation!.addListener(() {
+      setState(() {});
+    });
+
+    // Index o'zgarganida ham yangilash
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
+
+    context.read<DoctorAppointmentBloc>().add(LoadDoctorAppointmentsEvent());
   }
 
   @override
   void dispose() {
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
 
-  /// Appointmentlarni yuklash (filter bilan)
-  void _loadAppointments() {
-    context.read<AppointmentBloc>().add(
-          GetAppointmentsEvent(filters: _currentFilters),
-        );
+  /// Current tab index ni olish (animation bilan)
+  int get _currentTabIndex => _tabController.animation!.value.round();
+
+  /// Filter bo'yicha uchrashuvlarni filterlash
+  List<DoctorAppointmentEntity> _applyFilters(
+      List<DoctorAppointmentEntity> appointments) {
+    if (!_hasActiveFilters) return appointments;
+
+    return appointments.where((appointment) {
+      // Yaratilgan sana bo'yicha filter
+      if (_currentFilters.createdAt?.isNotEmpty == true) {
+        try {
+          final filterDate = DateTime.parse(_currentFilters.createdAt!);
+          final appointmentDate = DateTime(
+            appointment.dataZayavki.year,
+            appointment.dataZayavki.month,
+            appointment.dataZayavki.day,
+          );
+          final filterDateOnly = DateTime(
+            filterDate.year,
+            filterDate.month,
+            filterDate.day,
+          );
+          if (appointmentDate != filterDateOnly) {
+            return false;
+          }
+        } catch (e) {
+          return false;
+        }
+      }
+
+      // Bemorning ismi bo'yicha filter
+      if (_currentFilters.patientFirstName?.isNotEmpty == true) {
+        final firstName = appointment.patientFirstName.toLowerCase();
+        final filterName = _currentFilters.patientFirstName!.toLowerCase();
+        if (!firstName.contains(filterName)) {
+          return false;
+        }
+      }
+
+      // Bemorning familiyasi bo'yicha filter
+      if (_currentFilters.patientLastName?.isNotEmpty == true) {
+        final lastName = appointment.patientLastname.toLowerCase();
+        final filterLastName = _currentFilters.patientLastName!.toLowerCase();
+        if (!lastName.contains(filterLastName)) {
+          return false;
+        }
+      }
+
+      // Telefon raqami bo'yicha filter
+      if (_currentFilters.patientPhoneNumber?.isNotEmpty == true) {
+        final phone = appointment.patientPhoneNumber;
+        if (!phone.contains(_currentFilters.patientPhoneNumber!)) {
+          return false;
+        }
+      }
+
+      // Tug'ilgan sana bo'yicha filter
+      if (_currentFilters.patientBirthDate?.isNotEmpty == true) {
+        try {
+          final filterBirthDate =
+              DateTime.parse(_currentFilters.patientBirthDate!);
+          final appointmentBirthDate = DateTime(
+            appointment.patientBirthDate.year,
+            appointment.patientBirthDate.month,
+            appointment.patientBirthDate.day,
+          );
+          final filterBirthDateOnly = DateTime(
+            filterBirthDate.year,
+            filterBirthDate.month,
+            filterBirthDate.day,
+          );
+          if (appointmentBirthDate != filterBirthDateOnly) {
+            return false;
+          }
+        } catch (e) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
   }
 
-  /// Filter ochish
-  void _showFilterDialog() async {
+  /// Status bo'yicha filterlash
+  List<DoctorAppointmentEntity> _filterAppointmentsByStatus(
+      List<DoctorAppointmentEntity> appointments, String status) {
+    final filteredByFilters = _applyFilters(appointments);
+
+    if (status == 'Все') {
+      return filteredByFilters;
+    }
+    return filteredByFilters
+        .where((appointment) => appointment.sostoyanie == status)
+        .toList();
+  }
+
+  /// Status uchun soni hisoblash
+  int _getStatusCount(
+      List<DoctorAppointmentEntity> appointments, String status) {
+    final filteredByFilters = _applyFilters(appointments);
+
+    if (status == 'Все') return filteredByFilters.length;
+    return filteredByFilters
+        .where((appointment) => appointment.sostoyanie == status)
+        .length;
+  }
+
+  /// Filter dialogini ochish
+  Future<void> _showFilterDialog() async {
     final result = await showDialog<AppointmentFilters>(
       context: context,
       barrierDismissible: true,
       builder: (context) => FilterDialog(currentFilters: _currentFilters),
     );
 
-    if (result != null && mounted) {
+    if (result != null) {
       setState(() {
         _currentFilters = result;
+        _hasActiveFilters = _checkIfFiltersActive(result);
       });
-      _loadAppointments();
     }
   }
 
-  /// Filterlarni tozalash
-  void _clearFilters() {
-    if (!_currentFilters.isEmpty) {
-      setState(() {
-        _currentFilters = AppointmentFilters.empty;
-      });
-      _loadAppointments();
-    }
+  /// Filterlar faol ekanligini tekshirish
+  bool _checkIfFiltersActive(AppointmentFilters filters) {
+    return filters.createdAt?.isNotEmpty == true ||
+        filters.patientFirstName?.isNotEmpty == true ||
+        filters.patientLastName?.isNotEmpty == true ||
+        filters.patientPhoneNumber?.isNotEmpty == true ||
+        filters.patientBirthDate?.isNotEmpty == true;
+  }
+
+  /// Barcha filterlarni tozalash
+  void _clearAllFilters() {
+    setState(() {
+      _currentFilters = const AppointmentFilters();
+      _hasActiveFilters = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text(
-          'Записи пациентов',
+          'Заявки пациентов',
           style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
             color: Colors.black87,
+            fontWeight: FontWeight.w600,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        shadowColor: Colors.grey.withOpacity(0.1),
         actions: [
           // Filter tugmasi
           Stack(
@@ -135,10 +228,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
                   Icons.filter_list,
                   color: Colors.black87,
                 ),
-                tooltip: 'Фильтр',
+                tooltip: 'Фильтры',
               ),
-              // Filter faol ekanligini ko'rsatish
-              if (!_currentFilters.isEmpty)
+              if (_hasActiveFilters)
                 Positioned(
                   right: 8,
                   top: 8,
@@ -146,136 +238,232 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
                     width: 8,
                     height: 8,
                     decoration: const BoxDecoration(
-                      color: ColorConstants.primaryColor,
+                      color: Colors.red,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
             ],
           ),
-          // Filter tozalash tugmasi
-          if (!_currentFilters.isEmpty)
+          if (_hasActiveFilters)
             IconButton(
-              onPressed: _clearFilters,
+              onPressed: _clearAllFilters,
               icon: const Icon(
                 Icons.clear,
                 color: Colors.black87,
               ),
-              tooltip: 'Очистить фильтр',
+              tooltip: 'Очистить фильтры',
             ),
+          const SizedBox(width: 8),
         ],
-        bottom: _buildTabBar(),
-      ),
-      backgroundColor: Colors.grey[50],
-      body: BlocBuilder<AppointmentBloc, AppointmentState>(
-        builder: (context, state) {
-          if (state is AppointmentLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: ColorConstants.primaryColor,
-              ),
-            );
-          } else if (state is AppointmentsLoaded) {
-            return _buildTabBarView(state.appointments);
-          } else if (state is AppointmentError) {
-            return _buildError(state.message);
-          }
-          return _buildEmpty();
-        },
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildTabBar() {
-    return TabBar(
-      controller: _tabController,
-      tabAlignment: TabAlignment.start,
-      isScrollable: true,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      labelColor: ColorConstants.primaryColor,
-      unselectedLabelColor: Colors.grey[600],
-      indicatorColor: ColorConstants.primaryColor,
-      indicatorWeight: 3,
-      indicatorSize: TabBarIndicatorSize.tab,
-      labelStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      unselectedLabelStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-      tabs: _tabConfigs.map((config) => Tab(text: config.label)).toList(),
-    );
-  }
-
-  Widget _buildTabBarView(List<AppointmentModel> allAppointments) {
-    return TabBarView(
-      controller: _tabController,
-      children: _tabConfigs
-          .map((config) => _AppointmentsList(
-                appointments:
-                    _filterAppointmentsByStatus(allAppointments, config),
-                onRefresh: _loadAppointments,
-                onAppointmentTap: _onAppointmentTap,
-              ))
-          .toList(),
-    );
-  }
-
-  List<AppointmentModel> _filterAppointmentsByStatus(
-    List<AppointmentModel> appointments,
-    _TabConfig config,
-  ) {
-    if (config.isAllTab) return appointments;
-
-    return appointments
-        .where((appointment) => appointment.status == config.status)
-        .toList();
-  }
-
-  void _onAppointmentTap(AppointmentModel appointment) {
-    context.push(
-      RoutePaths.appointmentDetailScreen,
-      extra: {'appointment': appointment},
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50.0),
+          child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.08),
+                  blurRadius: 1,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
-            child: Icon(
-              Icons.calendar_today_outlined,
-              size: 40,
-              color: Colors.grey[400],
+            child: BlocBuilder<DoctorAppointmentBloc, DoctorAppointmentState>(
+              builder: (context, state) {
+                final appointments = state is DoctorAppointmentLoaded
+                    ? state.data.cast<DoctorAppointmentEntity>()
+                    : <DoctorAppointmentEntity>[];
+
+                return TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  tabAlignment: TabAlignment.start,
+                  indicatorColor: Colors.transparent,
+                  dividerColor: Colors.transparent,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  tabs: _statusTabs.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final status = entry.value;
+                    final count = _getStatusCount(appointments, status);
+
+                    // Animation bilan current tab ni aniqlash
+                    final isSelected = _currentTabIndex == index;
+
+                    return Tab(
+                      height: 45,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: isSelected
+                              ? ColorConstants.primaryColor
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected
+                                ? ColorConstants.primaryColor
+                                : Colors.grey.shade300,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                status,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.grey.shade600,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            if (count > 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.white.withOpacity(0.2)
+                                      : Colors.grey.shade400,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  count.toString(),
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ),
-          const SizedBox(height: 24),
-          const Text(
-            'Записей не найдено',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+        ),
+      ),
+      body: Column(
+        children: [
+          // Faol filterlar haqida ma'lumot
+          if (_hasActiveFilters)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Применены фильтры поиска',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _clearAllFilters,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Сбросить',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _currentFilters.isEmpty
-                ? 'Пока нет записей на прием'
-                : 'Нет записей с такими параметрами',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
+          Expanded(
+            child: BlocBuilder<DoctorAppointmentBloc, DoctorAppointmentState>(
+              builder: (context, state) {
+                if (state is DoctorAppointmentLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is DoctorAppointmentError) {
+                  return _buildErrorWidget(context, state.error);
+                }
+
+                if (state is DoctorAppointmentLoaded) {
+                  final appointments =
+                      state.data.cast<DoctorAppointmentEntity>();
+
+                  return TabBarView(
+                    controller: _tabController,
+                    children: _statusTabs.map((status) {
+                      final filteredAppointments =
+                          _filterAppointmentsByStatus(appointments, status);
+
+                      if (filteredAppointments.isEmpty) {
+                        return _buildEmptyWidget(context, status);
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          context
+                              .read<DoctorAppointmentBloc>()
+                              .add(const LoadDoctorAppointmentsEvent());
+                        },
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredAppointments.length,
+                          itemBuilder: (context, index) {
+                            final appointment = filteredAppointments[index];
+                            return AppointmentCard(
+                              appointment: appointment,
+                              onTap: () => context.push(
+                                  RoutePaths.appointmentDetailScreen,
+                                  extra: {
+                                    "appointment": appointment,
+                                  }),
+                            );
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  );
+                }
+
+                return const SizedBox.expand();
+              },
             ),
           ),
         ],
@@ -283,60 +471,46 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
     );
   }
 
-  Widget _buildError(String message) {
+  Widget _buildErrorWidget(BuildContext context, String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: ColorConstants.errorColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline,
-                size: 40,
-                color: ColorConstants.errorColor,
-              ),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red.shade400,
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Произошла ошибка',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+            const SizedBox(height: 16),
+            Text(
+              'Ошибка загрузки',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
               textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _loadAppointments,
+              onPressed: () {
+                context
+                    .read<DoctorAppointmentBloc>()
+                    .add(const LoadDoctorAppointmentsEvent());
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Повторить'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: ColorConstants.primaryColor,
+                backgroundColor: Colors.blue.shade600,
                 foregroundColor: Colors.white,
-                elevation: 2,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
           ],
@@ -344,251 +518,95 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
       ),
     );
   }
-}
 
-/// Appointments list widget (o'zgarishsiz)
-class _AppointmentsList extends StatelessWidget {
-  final List<AppointmentModel> appointments;
-  final VoidCallback onRefresh;
-  final ValueChanged<AppointmentModel> onAppointmentTap;
+  Widget _buildEmptyWidget(BuildContext context, String status) {
+    String emptyMessage;
+    IconData emptyIcon;
 
-  const _AppointmentsList({
-    required this.appointments,
-    required this.onRefresh,
-    required this.onAppointmentTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (appointments.isEmpty) {
-      return _buildEmptyState();
+    switch (status) {
+      case 'Все':
+        emptyMessage = _hasActiveFilters
+            ? 'По заданным фильтрам результатов не найдено'
+            : 'Нет заявок от пациентов';
+        emptyIcon = Icons.calendar_today_outlined;
+        break;
+      case 'Запланирована':
+        emptyMessage = _hasActiveFilters
+            ? 'Нет запланированных приемов по фильтрам'
+            : 'Нет запланированных приемов';
+        emptyIcon = Icons.schedule_outlined;
+        break;
+      case 'Оформлена продажа':
+        emptyMessage = _hasActiveFilters
+            ? 'Нет оформленных продаж по фильтрам'
+            : 'Нет оформленных продаж';
+        emptyIcon = Icons.shopping_cart_outlined;
+        break;
+      case 'Проведен прием':
+        emptyMessage = _hasActiveFilters
+            ? 'Нет проведенных приемов по фильтрам'
+            : 'Нет проведенных приемов';
+        emptyIcon = Icons.check_circle_outline;
+        break;
+      case 'Выполнена':
+        emptyMessage = _hasActiveFilters
+            ? 'Нет выполненных процедур по фильтрам'
+            : 'Нет выполненных процедур';
+        emptyIcon = Icons.task_alt_outlined;
+        break;
+      case 'Отменена':
+        emptyMessage = _hasActiveFilters
+            ? 'Нет отмененных заявок по фильтрам'
+            : 'Нет отмененных заявок';
+        emptyIcon = Icons.cancel_outlined;
+        break;
+      default:
+        emptyMessage = 'Нет данных';
+        emptyIcon = Icons.inbox_outlined;
     }
 
-    return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
-      color: ColorConstants.primaryColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: appointments.length,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemBuilder: (context, index) {
-          final appointment = appointments[index];
-          return _buildAppointmentCard(context, appointment);
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              emptyIcon,
+              size: 64,
+              color: Colors.grey.shade400,
             ),
-            child: Icon(
-              Icons.event_note_outlined,
-              size: 32,
-              color: Colors.grey[400],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Записей нет',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'В данной категории пока нет записей',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppointmentCard(
-      BuildContext context, AppointmentModel appointment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => onAppointmentTap(appointment),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: ColorConstants.primaryColor.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        color: ColorConstants.primaryColor,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            appointment.patientName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 14,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                appointment.appointmentTime,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: appointment.status.color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            appointment.status.icon,
-                            size: 12,
-                            color: appointment.status.color,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            appointment.status.displayText,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: appointment.status.color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 16),
+            Text(
+              'Пусто',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          appointment.clinicName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (appointment.notes?.isNotEmpty == true) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue[100]!),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.note_outlined,
-                          size: 16,
-                          color: Colors.blue[600],
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            appointment.notes!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.blue[700],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              emptyMessage,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                context
+                    .read<DoctorAppointmentBloc>()
+                    .add(const LoadDoctorAppointmentsEvent());
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Обновить'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.shade600,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );

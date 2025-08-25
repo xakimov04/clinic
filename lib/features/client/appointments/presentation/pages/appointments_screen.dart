@@ -1,33 +1,14 @@
 import 'package:clinic/features/client/appointments/data/models/appointment_model.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_bloc.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_event.dart';
+import 'package:clinic/features/client/appointments/presentation/bloc/appointment/appointment_state.dart';
 import 'package:flutter/material.dart';
 import 'package:clinic/core/constants/color_constants.dart';
 import 'package:clinic/core/extension/spacing_extension.dart';
-import 'package:clinic/features/client/appointments/domain/repositories/appointment_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Appointments state enum
-enum AppointmentsViewState { initial, loading, loaded, error, refreshing }
-
-/// Tab configuration model
-class _TabConfig {
-  final AppointmentStatus status;
-  final String label;
-  final IconData icon;
-
-  const _TabConfig({
-    required this.status,
-    required this.label,
-    required this.icon,
-  });
-}
-
-/// Main appointments screen with optimized architecture
 class AppointmentsScreen extends StatefulWidget {
-  final AppointmentRepository repository;
-
-  const AppointmentsScreen({
-    super.key,
-    required this.repository,
-  });
+  const AppointmentsScreen({super.key});
 
   @override
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
@@ -35,200 +16,69 @@ class AppointmentsScreen extends StatefulWidget {
 
 class _AppointmentsScreenState extends State<AppointmentsScreen>
     with SingleTickerProviderStateMixin {
-  // State management
-  List<AppointmentModel> _appointments = [];
-  AppointmentsViewState _viewState = AppointmentsViewState.initial;
-  String? _errorMessage;
-
-  // Tab controller
   late TabController _tabController;
-
-  // Tab configurations
-  static const List<_TabConfig> _tabConfigs = [
-    _TabConfig(
-      status: AppointmentStatus.pending,
-      label: 'Ожидает',
-      icon: Icons.access_time_outlined,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.confirmed,
-      label: 'Подтверждено',
-      icon: Icons.check_circle_outline,
-    ),
-    _TabConfig(
-      status: AppointmentStatus.completed,
-      label: 'Завершено',
-      icon: Icons.task_alt_outlined,
-    ),
-  ];
+  final _tabConfigs = TabConfig.tabConfigs;
 
   @override
   void initState() {
     super.initState();
+    context.read<AppointmentBloc>().add(GetAppointmentsEvent());
     _tabController = TabController(length: _tabConfigs.length, vsync: this);
-    _tabController.addListener(_onTabChanged);
-    _loadAppointments();
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) {
-      setState(() {});
-    }
-  }
-
-  /// Appointments ni yuklash
-  Future<void> _loadAppointments({bool isRefresh = false}) async {
-    if (!mounted) return;
-
-    setState(() {
-      _viewState = isRefresh
-          ? AppointmentsViewState.refreshing
-          : AppointmentsViewState.loading;
-      if (!isRefresh) _errorMessage = null;
-    });
-
-    try {
-      final result = await widget.repository.getAppointments();
-
-      if (!mounted) return;
-
-      result.fold(
-        (failure) {
-          setState(() {
-            _viewState = AppointmentsViewState.error;
-            _errorMessage = failure.message;
-          });
-        },
-        (appointments) {
-          setState(() {
-            _appointments = appointments.sortByDate();
-            _viewState = AppointmentsViewState.loaded;
-          });
-        },
-      );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _viewState = AppointmentsViewState.error;
-        _errorMessage = 'Неожиданная ошибка: ${e.toString()}';
-      });
-    }
-  }
-
-  /// Refresh appointments
-  Future<void> _onRefresh() async {
-    await _loadAppointments(isRefresh: true);
-  }
-
-  /// Отмена записи
-  Future<void> _cancelAppointment(AppointmentModel appointment) async {
-    if (!appointment.status.canCancel) {
-      _showSnackBar('Эту запись нельзя отменить', isError: true);
-      return;
-    }
-
-    final confirmed = await _showConfirmationDialog(
-      title: 'Отменить запись',
-      content:
-          'Вы уверены, что хотите отменить запись к ${appointment.doctorName}?',
-      confirmText: 'Отменить',
-      cancelText: 'Назад',
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await _loadAppointments();
-      _showSnackBar('Запись успешно отменена');
-    } catch (e) {
-      _showSnackBar('Ошибка при отмене записи: ${e.toString()}', isError: true);
-    }
-  }
-
-  /// Показать snackbar
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? ColorConstants.errorColor : null,
-        behavior: SnackBarBehavior.floating,
-        action: isError
-            ? SnackBarAction(
-                label: 'Закрыть',
-                onPressed: () =>
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-              )
-            : null,
-      ),
-    );
-  }
-
-  /// Показать диалог подтверждения
-  Future<bool?> _showConfirmationDialog({
-    required String title,
-    required String content,
-    required String confirmText,
-    required String cancelText,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(cancelText),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ColorConstants.errorColor,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(confirmText),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
-      body: _buildBody(),
+      body: BlocConsumer<AppointmentBloc, AppointmentState>(
+        listener: (context, state) {
+          // Error handling
+          if (state is AppointmentError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: ColorConstants.errorColor,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          return _buildBody(state);
+        },
+      ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text('Записи'),
+      title: const Text('Встречи'),
       backgroundColor: ColorConstants.backgroundColor,
       elevation: 0,
       centerTitle: true,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: () {
+            context.read<AppointmentBloc>().add(GetAppointmentsEvent());
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(AppointmentState state) {
     return Column(
       children: [
         _buildTabBar(),
         Expanded(
-          child: _buildTabBarView(),
+          child: _buildTabBarView(state),
         ),
       ],
     );
@@ -243,81 +93,85 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         unselectedLabelColor: ColorConstants.secondaryTextColor,
         indicatorColor: ColorConstants.primaryColor,
         indicatorWeight: 3,
-        tabs: _tabConfigs
-            .map((config) => Tab(
-                  text: config.label,
-                ))
-            .toList(),
+        tabs: _tabConfigs.map((config) => Tab(text: config.label)).toList(),
       ),
     );
   }
 
-  Widget _buildTabBarView() {
+  Widget _buildTabBarView(AppointmentState state) {
     return TabBarView(
       controller: _tabController,
-      children: _tabConfigs
-          .map(
-            (config) => _AppointmentsList(
-              appointments: _appointments.filterByStatus(config.status),
-              viewState: _viewState,
-              errorMessage: _errorMessage,
-              onRefresh: _onRefresh,
-              onRetry: _loadAppointments,
-              onCancel: _cancelAppointment,
-            ),
-          )
-          .toList(),
+      children: List.generate(_tabConfigs.length, (index) {
+        return _AppointmentsList(
+          state: state,
+          tabIndex: index,
+          tabConfigs: _tabConfigs,
+          onRefresh: () {
+            context.read<AppointmentBloc>().add(GetAppointmentsEvent());
+          },
+          onRetry: () {
+            context.read<AppointmentBloc>().add(GetAppointmentsEvent());
+          },
+        );
+      }),
     );
   }
 }
 
-/// Appointments list widget
 class _AppointmentsList extends StatelessWidget {
-  final List<AppointmentModel> appointments;
-  final AppointmentsViewState viewState;
-  final String? errorMessage;
+  final AppointmentState state;
+  final int tabIndex;
+  final List<TabConfig> tabConfigs;
   final VoidCallback onRefresh;
   final VoidCallback onRetry;
-  final Function(AppointmentModel) onCancel;
 
   const _AppointmentsList({
-    required this.appointments,
-    required this.viewState,
-    required this.errorMessage,
+    required this.state,
+    required this.tabIndex,
+    required this.tabConfigs,
     required this.onRefresh,
     required this.onRetry,
-    required this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    switch (viewState) {
-      case AppointmentsViewState.loading:
-        return const _LoadingView();
-      case AppointmentsViewState.error:
-        return _ErrorView(
-          message: errorMessage ??
-              'Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.',
+    return switch (state) {
+      AppointmentInitial() || AppointmentLoading() => const _LoadingView(),
+      AppointmentError(message: final message) => _ErrorView(
+          message: message,
           onRetry: onRetry,
-        );
-      case AppointmentsViewState.loaded:
-      case AppointmentsViewState.refreshing:
-        if (appointments.isEmpty) {
-          return const _EmptyView();
-        }
-        return _AppointmentsListView(
-          appointments: appointments,
-          onRefresh: onRefresh,
-          onCancel: onCancel,
-          isRefreshing: viewState == AppointmentsViewState.refreshing,
-        );
-      default:
-        return const SizedBox.shrink();
+        ),
+      AppointmentsLoaded(appointments: final appointments) =>
+        _buildLoadedView(appointments),
+
+      // Boshqa state-lar uchun default
+      _ => const _LoadingView(),
+    };
+  }
+
+  Widget _buildLoadedView(List<AppointmentModel> appointments) {
+    final filteredAppointments = _getFilteredAppointments(appointments);
+
+    if (filteredAppointments.isEmpty) {
+      return const _EmptyView();
     }
+
+    return _AppointmentsListView(
+      appointments: filteredAppointments,
+      onRefresh: onRefresh,
+      isRefreshing: false,
+    );
+  }
+
+  List<AppointmentModel> _getFilteredAppointments(
+      List<AppointmentModel> appointments) {
+    final config = tabConfigs[tabIndex];
+    return appointments
+        .where((appointment) => config.statuses.contains(appointment.status))
+        .toList();
   }
 }
 
-/// Loading view
 class _LoadingView extends StatelessWidget {
   const _LoadingView();
 
@@ -327,9 +181,19 @@ class _LoadingView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              ColorConstants.primaryColor,
+            ),
+          ),
           SizedBox(height: 16),
-          Text('Загрузка записей...'),
+          Text(
+            'Загрузка встреч...',
+            style: TextStyle(
+              fontSize: 16,
+              color: ColorConstants.secondaryTextColor,
+            ),
+          ),
         ],
       ),
     );
@@ -426,33 +290,41 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-/// Appointments list view
 class _AppointmentsListView extends StatelessWidget {
   final List<AppointmentModel> appointments;
   final VoidCallback onRefresh;
-  final Function(AppointmentModel) onCancel;
   final bool isRefreshing;
 
   const _AppointmentsListView({
     required this.appointments,
     required this.onRefresh,
-    required this.onCancel,
     required this.isRefreshing,
   });
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
-      child: ListView.builder(
-        padding: 16.a,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: appointments.length,
-        itemBuilder: (context, index) {
-          final appointment = appointments[index];
-          return _AppointmentCard(
-            appointment: appointment,
-            onCancel: () => onCancel(appointment),
+      onRefresh: () async {
+        onRefresh();
+        // BLoC state o'zgarishini kutish
+        await Future.delayed(const Duration(milliseconds: 500));
+      },
+      child: BlocBuilder<AppointmentBloc, AppointmentState>(
+        builder: (context, state) {
+          final isLoading = state is AppointmentLoading;
+
+          return ListView.builder(
+            padding: 16.a,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: appointments.length,
+            itemBuilder: (context, index) {
+              final appointment = appointments[index];
+              return AnimatedOpacity(
+                opacity: isLoading ? 0.6 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: _AppointmentCard(appointment: appointment),
+              );
+            },
           );
         },
       ),
@@ -463,11 +335,9 @@ class _AppointmentsListView extends StatelessWidget {
 /// Appointment card widget
 class _AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
-  final VoidCallback onCancel;
 
   const _AppointmentCard({
     required this.appointment,
-    required this.onCancel,
   });
 
   @override
@@ -549,7 +419,7 @@ class _AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        appointment.status.displayText,
+        appointment.status.displayName,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -625,7 +495,7 @@ class _AppointmentDetailsSheet extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: 16.verticalTop,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -681,10 +551,6 @@ class _AppointmentDetailsSheet extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         _buildDetailCard(),
-        if (appointment.notes?.isNotEmpty ?? false) ...[
-          const SizedBox(height: 20),
-          _buildNotesCard(),
-        ],
         const SizedBox(height: 20),
       ],
     );
@@ -723,75 +589,8 @@ class _AppointmentDetailsSheet extends StatelessWidget {
             _buildDetailRow('Время', appointment.appointmentTime,
                 Icons.access_time_outlined),
             const SizedBox(height: 16),
-            _buildStatusRow(
-                'Статус', appointment.status.displayText, _getStatusIcon()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.blue.shade100,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.note_outlined,
-                    size: 20,
-                    color: Colors.blue.shade600,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Заметки',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.blue.shade100,
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                appointment.notes!,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ),
+            _buildStatusRow('Статус', appointment.status.displayName,
+                appointment.status.icon),
           ],
         ),
       ),
@@ -846,7 +645,7 @@ class _AppointmentDetailsSheet extends StatelessWidget {
   }
 
   Widget _buildStatusRow(String label, String value, IconData icon) {
-    final statusColor = _getStatusColor();
+    final statusColor = appointment.status.color;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -940,35 +739,5 @@ class _AppointmentDetailsSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getStatusColor() {
-    switch (appointment.status.name.toString().toLowerCase()) {
-      case 'pending':
-        return const Color(0xFFFF9800); // Amber/Orange
-      case 'confirmed':
-        return const Color(0xFF4CAF50); // Green
-      case 'cancelled':
-        return const Color(0xFFF44336); // Red
-      case 'completed':
-        return const Color(0xFF2196F3); // Blue
-      default:
-        return const Color(0xFF9E9E9E); // Grey
-    }
-  }
-
-  IconData _getStatusIcon() {
-    switch (appointment.status.name.toString().toLowerCase()) {
-      case 'pending':
-        return Icons.schedule_outlined;
-      case 'confirmed':
-        return Icons.check_circle_outline;
-      case 'cancelled':
-        return Icons.cancel_outlined;
-      case 'completed':
-        return Icons.task_alt_outlined;
-      default:
-        return Icons.info_outline;
-    }
   }
 }
