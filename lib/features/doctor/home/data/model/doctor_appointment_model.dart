@@ -11,6 +11,7 @@ class DoctorAppointmentModel extends DoctorAppointmentEntity {
     required super.patientLastname,
     required super.patientBirthDate,
     required super.patientPhoneNumber,
+    required super.chatGuid,
   });
 
   factory DoctorAppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,7 @@ class DoctorAppointmentModel extends DoctorAppointmentEntity {
           ? DateTime.parse(json['patient_birth_date'])
           : DateTime(2000, 1, 1),
       patientPhoneNumber: json['patient_phone_number']?.toString() ?? '',
+      chatGuid: json['chat_guid'] ?? "",
     );
   }
 
@@ -60,6 +62,7 @@ class DoctorAppointmentModel extends DoctorAppointmentEntity {
       patientLastname: entity.patientLastname,
       patientBirthDate: entity.patientBirthDate,
       patientPhoneNumber: entity.patientPhoneNumber,
+      chatGuid: entity.chatGuid
     );
   }
 
@@ -73,6 +76,7 @@ class DoctorAppointmentModel extends DoctorAppointmentEntity {
     String? patientLastname,
     DateTime? patientBirthDate,
     String? patientPhoneNumber,
+    String? chatGuid,
   }) {
     return DoctorAppointmentModel(
       uid: uid ?? this.uid,
@@ -85,6 +89,7 @@ class DoctorAppointmentModel extends DoctorAppointmentEntity {
       patientLastname: patientLastname ?? this.patientLastname,
       patientBirthDate: patientBirthDate ?? this.patientBirthDate,
       patientPhoneNumber: patientPhoneNumber ?? this.patientPhoneNumber,
+      chatGuid: chatGuid ?? this.chatGuid,
     );
   }
 

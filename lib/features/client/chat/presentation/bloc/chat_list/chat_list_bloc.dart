@@ -127,7 +127,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
 
     emit(ChatCreating(currentChats));
 
-    final result = await createChatUsecase(event.patientId.toString());
+    final result = await createChatUsecase(event.patientId);
 
     result.fold(
       (failure) {

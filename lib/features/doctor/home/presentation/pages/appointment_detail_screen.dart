@@ -68,30 +68,33 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         ),
       ),
       actions: [
-        BlocBuilder<ChatListBloc, ChatListState>(
-          builder: (context, state) {
-            final isCreatingChat = state is ChatCreating;
+        _currentAppointment.chatGuid.isNotEmpty
+            ? BlocBuilder<ChatListBloc, ChatListState>(
+                builder: (context, state) {
+                  final isCreatingChat = state is ChatCreating;
 
-            return IconButton(
-              onPressed: isCreatingChat ? null : () => _createChat(context),
-              icon: isCreatingChat
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          ColorConstants.primaryColor,
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      CupertinoIcons.chat_bubble_2_fill,
-                      color: ColorConstants.primaryColor,
-                    ),
-            );
-          },
-        ),
+                  return IconButton(
+                    onPressed:
+                        isCreatingChat ? null : () => _createChat(context),
+                    icon: isCreatingChat
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                ColorConstants.primaryColor,
+                              ),
+                            ),
+                          )
+                        : Icon(
+                            CupertinoIcons.chat_bubble_2_fill,
+                            color: ColorConstants.primaryColor,
+                          ),
+                  );
+                },
+              )
+            : SizedBox(),
       ],
       iconTheme: const IconThemeData(color: Colors.black),
     );
@@ -142,7 +145,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   void _createChat(BuildContext context) {
     context
         .read<ChatListBloc>()
-        .add(CreateChatEvent(int.parse(_currentAppointment.uid)));
+        .add(CreateChatEvent(_currentAppointment.chatGuid));
   }
 
   void _navigateToChatDetail(BuildContext context, ChatEntity chat) {

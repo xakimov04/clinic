@@ -13,6 +13,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clinic/core/ui/widgets/snackbars/custom_snackbar.dart';
 import 'package:clinic/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -490,9 +491,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.of(context).pop();
-                    context.read<ProfileBloc>().add(LogoutEvent());
+                    context.go('/auth');
+                    final local = await SharedPreferences.getInstance();
+                    local.clear();
+                    // context.read<ProfileBloc>().add(LogoutEvent());
                   },
                   child: Text(
                     "Выйти",

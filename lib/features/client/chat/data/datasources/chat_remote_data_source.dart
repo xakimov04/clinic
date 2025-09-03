@@ -37,7 +37,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   Future<Either<Failure, ChatModel>> createChats(String patientId) async {
     try {
       final response = await networkManager
-          .postData(url: 'chats/create/', data: {"patient_id": patientId});
+          .postData(url: 'chats/create/', data: {"chat_guid": patientId});
       final data = ChatModel.fromJson(response);
       return Right(data);
     } catch (e) {

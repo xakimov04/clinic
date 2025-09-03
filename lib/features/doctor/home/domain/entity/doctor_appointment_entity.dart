@@ -10,6 +10,7 @@ class DoctorAppointmentEntity extends Equatable {
   final String patientLastname;
   final DateTime patientBirthDate;
   final String patientPhoneNumber;
+  final String chatGuid;
 
   const DoctorAppointmentEntity({
     required this.uid,
@@ -21,6 +22,7 @@ class DoctorAppointmentEntity extends Equatable {
     required this.patientLastname,
     required this.patientBirthDate,
     required this.patientPhoneNumber,
+    required this.chatGuid,
   });
 
   @override
@@ -34,6 +36,7 @@ class DoctorAppointmentEntity extends Equatable {
         patientLastname,
         patientBirthDate,
         patientPhoneNumber,
+        chatGuid,
       ];
 
   // Yoshi hisoblanishi uchun helper method

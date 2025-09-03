@@ -18,7 +18,7 @@ final class RefreshChatsListEvent extends ChatListEvent {
 }
 
 final class CreateChatEvent extends ChatListEvent {
-  final int patientId;
+  final String patientId;
 
   const CreateChatEvent(this.patientId);
 
