@@ -140,7 +140,9 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   void _createChat(BuildContext context) {
-    // context.read<ChatListBloc>().add(CreateChatEvent(_currentAppointment.uid));
+    context
+        .read<ChatListBloc>()
+        .add(CreateChatEvent(int.parse(_currentAppointment.uid)));
   }
 
   void _navigateToChatDetail(BuildContext context, ChatEntity chat) {
@@ -232,7 +234,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     switch (status.toLowerCase()) {
       case 'запланирована':
       case 'pending':
-        return const Color(0xFF1976D2); 
+        return const Color(0xFF1976D2);
       case 'завершена':
       case 'completed':
         return const Color(0xFF388E3C); // Material Green

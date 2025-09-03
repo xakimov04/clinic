@@ -155,7 +155,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
       return filteredByFilters;
     }
     return filteredByFilters
-        .where((appointment) => appointment.sostoyanie == status)
+        .where((appointment) =>
+            appointment.sostoyanie.trim().toLowerCase() == status.toLowerCase())
         .toList();
   }
 
@@ -166,7 +167,8 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen>
 
     if (status == 'Все') return filteredByFilters.length;
     return filteredByFilters
-        .where((appointment) => appointment.sostoyanie == status)
+        .where((appointment) =>
+            appointment.sostoyanie.trim().toLowerCase() == status.toLowerCase())
         .length;
   }
 
